@@ -668,8 +668,7 @@ function renderDashboard() {
 
 function renderCurrentShortlists(fd) {
   const shortlisted = fd.filter(d =>
-    d.shortlisted === "yes" &&
-    d.booked !== "yes"
+    d.shortlisted === "yes" && d.booked !== "yes"
   );
 
   const el = document.getElementById("shortlist-summary");
@@ -693,32 +692,49 @@ function renderCurrentShortlists(fd) {
 
   const closeRate = totalHistoricalShortlists
     ? Math.round((bookedFromShortlist / totalHistoricalShortlists) * 100)
-  : 0;
+    : 0;
 
   const expectedValue = Math.round(total * (closeRate / 100));
- 
+
+  const jobRows = shortlisted
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map(d => `
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:8px 0;
+        border-bottom:0.5px solid var(--border);
+        font-size:13px;
+      ">
+        <div>
+          <div style="font-weight:500;">${d.title}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">${d.type} · ${fmtDate(d.date)}</div>
+        </div>
+        <div style="font-weight:500;color:var(--green);white-space:nowrap;margin-left:12px;">
+          ${d.bid ? "$" + Number(d.bid).toLocaleString() : "—"}
+        </div>
+      </div>
+    `).join("");
+
   el.innerHTML = `
     <div style="margin-bottom:14px;">
-      <div style="font-size:24px;font-weight:500;">
-        $${total.toLocaleString()}
+      ${jobRows}
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
+      <div>
+        <div style="font-size:12px;color:var(--text2);">Potential earnings</div>
+        <div style="font-size:20px;font-weight:500;">$${total.toLocaleString()}</div>
       </div>
-    
-      <div style="font-size:12px;color:var(--text2);margin-top:4px;">
-        Potential shortlist earnings (${shortlisted.length})
-      </div>
-    
       <div style="
-        margin-top:10px;
         padding:10px 12px;
         background:var(--blue-bg);
         border-radius:var(--radius);
+        flex:1;
+        min-width:160px;
       ">
-        <div style="font-size:12px;color:var(--blue-text);">
-          Historical close rate
-        </div>
-        <div style="font-size:18px;font-weight:500;color:var(--blue-text);">
-          ${closeRate}%
-        </div>
+        <div style="font-size:12px;color:var(--blue-text);">Historical close rate</div>
+        <div style="font-size:18px;font-weight:500;color:var(--blue-text);">${closeRate}%</div>
         <div style="font-size:12px;color:var(--blue-text);margin-top:2px;">
           Expected value: $${expectedValue.toLocaleString()}
         </div>
