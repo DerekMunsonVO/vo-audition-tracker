@@ -765,13 +765,16 @@ function bidBars(id,fd,outcome) {
 
 function renderTrend(fd) {
   const b = {};
+  const useWeekly = W > 30;
+
   fd.forEach(d => {
-    const w = dayLabel(d.date);
+    const w = useWeekly ? wkLabel(d.date) : dayLabel(d.date);
     if (!b[w]) b[w] = { t: 0, s: 0 };
     b[w].t++;
     if (d.shortlisted === "yes") b[w].s++;
   });
-  const labs = Object.keys(b).sort();
+
+  const labs = Object.keys(b).sort((a, b) => new Date(a + ", 2025") - new Date(b + ", 2025"));
   const ctx = document.getElementById("trendChart");
 
   if (TC) { TC.destroy(); TC = null; }
@@ -800,14 +803,22 @@ function renderTrend(fd) {
     }
   });
 
+  const groupLabel = useWeekly ? "weekly" : "daily";
   document.getElementById("chart-legend").innerHTML = `
     <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Auditions</span>
-    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted</span>`;
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted</span>
+    <span style="font-size:11px;color:var(--text3);margin-left:4px;">(${groupLabel})</span>`;
 }
 
 function dayLabel(s) {
   const d = new Date(s + "T12:00:00");
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function wkLabel(s) {
+  const d = new Date(s + "T12:00:00"), st = new Date(d);
+  st.setDate(d.getDate() - d.getDay());
+  return st.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function renderHistory() {
