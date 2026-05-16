@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audition Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #ffffff;
+    --bg2:       #f5f5f3;
+    --bg3:       #eeedea;
+    --border:    rgba(0,0,0,0.12);
+    --border2:   rgba(0,0,0,0.22);
+    --text:      #1a1a18;
+    --text2:     #5f5e5a;
+    --text3:     #9e9d98;
+    --blue:      #378ADD;
+    --blue-bg:   #E6F1FB;
+    --blue-text: #185FA5;
+    --green:     #1D9E75;
+    --green-bg:  #E1F5EE;
+    --green-text:#0F6E56;
+    --amber:     #BA7517;
+    --amber-bg:  #FAEEDA;
+    --amber-text:#854F0B;
+    --gray-bg:   #F1EFE8;
+    --gray-text: #5F5E5A;
+    --red:       #E24B4A;
+    --red-bg:    #FCEBEB;
+    --red-text:  #A32D2D;
+    --radius:    8px;
+    --radius-lg: 12px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #1c1c1a;
+      --bg2:       #252523;
+      --bg3:       #2e2e2b;
+      --border:    rgba(255,255,255,0.10);
+      --border2:   rgba(255,255,255,0.20);
+      --text:      #f0efeb;
+      --text2:     #a8a7a1;
+      --text3:     #6b6a65;
+      --blue-bg:   #0c2f52;
+      --blue-text: #85B7EB;
+      --green-bg:  #083526;
+      --green-text:#5DCAA5;
+      --amber-bg:  #3d2706;
+      --amber-text:#EF9F27;
+      --gray-bg:   #2c2c2a;
+      --gray-text: #a8a7a1;
+      --red-bg:    #3b1212;
+      --red-text:  #F09595;
+    }
+  }
+  body { font-family: var(--font); background: var(--bg3); color: var(--text); font-size: 15px; line-height: 1.5; min-height: 100vh; }
+
+  .shell { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+  .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .app-header h1 { font-size: 20px; font-weight: 500; }
+  .app-header .subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .status-wrap { display: flex; align-items: center; gap: 6px; }
+  #status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  #status-text { font-size: 13px; color: var(--text2); }
+  #clear-url-btn { font-family: var(--font); font-size: 12px; padding: 3px 10px; border-radius: var(--radius); cursor: pointer; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); margin-left: 8px; display: none; }
+
+  #setup-banner { background: var(--amber-bg); border: 0.5px solid var(--amber); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 24px; }
+  #setup-banner h2 { font-size: 15px; font-weight: 500; color: var(--amber-text); margin-bottom: 6px; }
+  #setup-banner p  { font-size: 13px; color: var(--amber-text); margin-bottom: 10px; }
+  #setup-banner label { font-size: 12px; color: var(--amber-text); display: block; margin-bottom: 4px; }
+  #script-url-input { font-family: var(--font); font-size: 13px; width: 100%; max-width: 580px; padding: 7px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); display: block; margin-bottom: 10px; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 0.5px solid var(--border); margin-bottom: 24px; }
+  .tab { font-family: var(--font); font-size: 14px; padding: 8px 16px; cursor: pointer; border: none; background: none; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--text); }
+  .tab-badge { background: var(--amber-bg); color: var(--amber-text); font-size: 11px; padding: 1px 7px; border-radius: 20px; margin-left: 4px; font-weight: 500; display: none; }
+
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 14px; }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
+  .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .metric-value { font-size: 22px; font-weight: 500; }
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  @media (max-width: 620px) {
+    .metric-grid { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr !important; }
+  }
+
+  .time-filter { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .time-btn { font-family: var(--font); font-size: 12px; padding: 4px 12px; border-radius: 20px; cursor: pointer; border: 0.5px solid var(--border); background: transparent; color: var(--text2); }
+  .time-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .bar-wrap { margin-bottom: 10px; }
+  .bar-label { font-size: 12px; color: var(--text2); margin-bottom: 3px; display: flex; justify-content: space-between; }
+  .bar-bg { background: var(--bg2); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+  .chart-wrap { position: relative; width: 100%; height: 200px; }
+  .empty { text-align: center; padding: 2rem; color: var(--text3); font-size: 14px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; color: var(--text2); }
+  .form-group input, .form-group select {
+    font-family: var(--font); font-size: 14px; padding: 7px 10px;
+    border: 0.5px solid var(--border2); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); width: 100%;
+  }
+  .form-group input:focus, .form-group select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .divider { border: none; border-top: 0.5px solid var(--border); margin: 16px 0; }
+  .budget-box { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+  .budget-box-title { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 10px; }
+
+  .btn { font-family: var(--font); font-size: 14px; padding: 8px 16px; border-radius: var(--radius); cursor: pointer; border: 0.5px solid var(--border2); background: transparent; color: var(--text); }
+  .btn:hover { background: var(--bg2); }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-primary:hover { opacity: .85; }
+  .btn-sm { font-size: 12px; padding: 4px 10px; }
+  .btn-danger { border-color: var(--red); color: var(--red-text); }
+  .btn-danger:hover { background: var(--red-bg); }
+
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+  .b-short   { background: var(--blue-bg);  color: var(--blue-text); }
+  .b-booked  { background: var(--green-bg); color: var(--green-text); }
+  .b-no      { background: var(--gray-bg);  color: var(--gray-text); }
+  .b-pending { background: var(--amber-bg); color: var(--amber-text); }
+  .b-below   { background: var(--green-bg); color: var(--green-text); }
+  .b-at      { background: var(--blue-bg);  color: var(--blue-text); }
+  .b-above   { background: var(--amber-bg); color: var(--amber-text); }
+
+  .hist-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
+  .hist-filters  { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hist-filters input, .hist-filters select { font-family: var(--font); font-size: 13px; padding: 6px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; min-width: 680px; }
+  th { text-align: left; font-size: 11px; font-weight: 500; color: var(--text2); padding: 0 6px 8px 0; border-bottom: 0.5px solid var(--border); }
+  td { padding: 9px 6px 9px 0; border-bottom: 0.5px solid var(--border); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+
+  .pend-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 12px; }
+  .pend-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .pend-sub   { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+  .pend-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .pend-field-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; }
+  .quick-btns { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: var(--bg); font-size: 13px; padding: 10px 18px; border-radius: var(--radius); display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="app-header">
+    <div>
+      <h1>Audition Tracker</h1>
+      <div class="subtitle">Voices.com · Voice123 · Direct</div>
+    </div>
+    <div class="status-wrap">
+      <span id="status-dot"></span>
+      <span id="status-text">Not connected</span>
+      <button id="clear-url-btn" onclick="clearScriptUrl()">Change URL</button>
+    </div>
+  </div>
+
+  <div id="setup-banner">
+    <h2>⚙️ One-time setup</h2>
+    <p>Deploy your Google Apps Script as a web app, copy the URL, and paste it below. It's saved in your browser and never shared.</p>
+    <label for="script-url-input">Apps Script web app URL</label>
+    <input type="url" id="script-url-input" placeholder="https://script.google.com/macros/s/…/exec">
+    <button class="btn btn-primary" onclick="saveScriptUrl()">Save &amp; connect</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="showTab('log')">Log audition</button>
+    <button class="tab" onclick="showTab('history')">History</button>
+    <button class="tab" onclick="showTab('pending')">Pending <span class="tab-badge" id="pb"></span></button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard">
+    <div class="time-filter">
+      <button class="time-btn active" onclick="setWin(7,this)">7 days</button>
+      <button class="time-btn" onclick="setWin(30,this)">30 days</button>
+      <button class="time-btn" onclick="setWin(90,this)">90 days</button>
+      <button class="time-btn" onclick="setWin(180,this)">6 months</button>
+      <button class="time-btn" onclick="setWin(365,this)">1 year</button>
+      <button class="time-btn" onclick="setWin(99999,this)">All time</button>
+    </div>
+    <div class="metric-grid" id="metrics"></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Shortlist rate by project type</div><div id="b-type"></div></div>
+      <div class="card"><div class="card-title">Shortlist rate by usage</div><div id="b-usage"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Shortlist rate by bid position</div><div id="b-bidshort"></div></div>
+      <div class="card"><div class="card-title">Booking rate by bid position</div><div id="b-bidbook"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Auditions over time (weekly)</div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      <div id="chart-legend" style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-log" style="display:none;">
+    <div class="card">
+      <div class="card-title" id="form-title">New audition entry</div>
+      <div class="form-row">
+        <div class="form-group"><label>Date submitted</label><input type="date" id="f-date"></div>
+        <div class="form-group"><label>Job title</label><input type="text" id="f-title" placeholder="e.g. Tech company explainer"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Project type</label>
+          <select id="f-type">
+            <option value="">Select…</option>
+            <option>TV / radio commercial</option><option>Online / digital ad</option>
+            <option>Corporate narration</option><option>E-learning</option>
+            <option>Internal video</option><option>Explainer / promo</option>
+            <option>Audiobook</option><option>IVR / phone system</option>
+            <option>Video game</option><option>Documentary</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Usage</label>
+          <select id="f-usage">
+            <option value="">Select…</option>
+            <option>National broadcast</option><option>Regional broadcast</option>
+            <option>Local broadcast</option><option>Online / streaming</option>
+            <option>Internal only</option><option>Worldwide</option><option>Unknown / TBD</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Platform</label>
+          <select id="f-platform">
+            <option>Voices.com</option><option>Voice123</option><option>Direct</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Listened?</label>
+            <select id="f-listened">
+              <option value="pending">Pending / unknown</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Shortlisted?</label>
+          <select id="f-short">
+            <option value="no">No</option><option value="yes">Yes</option><option value="pending">Pending / unknown</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Booked?</label>
+          <select id="f-booked">
+            <option value="no">No</option><option value="yes">Yes</option><option value="pending">Pending</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Notes (optional)</label>
+          <input type="text" id="f-notes" placeholder="e.g. Upbeat read, fast turnaround">
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="budget-box">
+        <div class="budget-box-title">Budget &amp; bid</div>
+        <div class="form-row" style="margin-bottom:10px;">
+          <div class="form-group"><label>Budget type</label>
+            <select id="f-btype" onchange="onBtypeChange()">
+              <option value="none">Not listed</option>
+              <option value="flat">Flat amount</option>
+              <option value="range">Range (low–high)</option>
+            </select>
+          </div>
+          <div class="form-group" id="fg-flat" style="display:none;"><label>Listed budget ($)</label>
+            <input type="number" id="f-bflat" min="0" placeholder="e.g. 500" oninput="calcPos()">
+          </div>
+          <div class="form-group" id="fg-blo" style="display:none;"><label>Range low ($)</label>
+            <input type="number" id="f-blo" min="0" placeholder="e.g. 400" oninput="calcPos()">
+          </div>
+        </div>
+        <div class="form-row" id="row-bhi" style="display:none;margin-bottom:10px;">
+          <div class="form-group"><label>Range high ($)</label>
+            <input type="number" id="f-bhi" min="0" placeholder="e.g. 700" oninput="calcPos()">
+          </div>
+          <div></div>
+        </div>
+        <div class="form-row" id="row-bid" style="display:none;">
+          <div class="form-group"><label>Your bid ($)</label>
+            <input type="number" id="f-bid" min="0" placeholder="e.g. 475" oninput="calcPos()">
+          </div>
+          <div class="form-group"><label>Bid position</label>
+            <div id="pos-display" style="font-size:13px;color:var(--text3);padding:9px 0;">Enter amounts above</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="save-btn" onclick="saveAudition()">Save audition</button>
+        <button class="btn" onclick="cancelEdit()">Clear</button>
+        <span id="save-msg" style="font-size:13px;color:#3B6D11;display:none;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="tab-history" style="display:none;">
+    <div class="hist-controls">
+      <div class="hist-filters">
+        <input type="text" id="search" placeholder="Search…" oninput="renderHistory()" style="width:160px;">
+        <select id="fil-short" onchange="renderHistory()">
+          <option value="">All shortlist</option><option value="yes">Shortlisted</option>
+          <option value="no">Not shortlisted</option><option value="pending">Pending</option>
+        </select>
+        <select id="fil-type" onchange="renderHistory()"><option value="">All types</option></select>
+      </div>
+      <button class="btn btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="card" style="padding:12px 20px;">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:78px;">Date</th>
+            <th style="width:150px;">Title</th>
+            <th style="width:120px;">Type</th>
+            <th style="width:90px;">Budget</th>
+            <th style="width:58px;">Bid</th>
+            <th style="width:60px;">Position</th>
+            <th style="width:78px;">Shortlisted</th>
+            <th style="width:65px;">Booked</th>
+            <th style="width:68px;"></th>
+          </tr></thead>
+          <tbody id="hist-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENDING -->
+  <div id="tab-pending" style="display:none;">
+    <div id="pend-list"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── Config ───────────────────────────────────────────────────
+const URL_KEY = "audition_tracker_script_url";
+let SCRIPT_URL = localStorage.getItem(URL_KEY) || "";
+let D = [], W = 7, TC = null, EID = null;
+
+// ── Init ─────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  setToday();
+  if (SCRIPT_URL) {
+    document.getElementById("setup-banner").style.display = "none";
+    document.getElementById("script-url-input").value     = SCRIPT_URL;
+    document.getElementById("clear-url-btn").style.display = "inline";
+    loadData();
+  }
+  renderDashboard();
+});
+
+// ── Setup ────────────────────────────────────────────────────
+function saveScriptUrl() {
+  const v = document.getElementById("script-url-input").value.trim();
+  if (!v) { toast("Please paste your Apps Script URL first."); return; }
+  SCRIPT_URL = v;
+  localStorage.setItem(URL_KEY, v);
+  document.getElementById("setup-banner").style.display  = "none";
+  document.getElementById("clear-url-btn").style.display = "inline";
+  loadData();
+}
+
+function clearScriptUrl() {
+  localStorage.removeItem(URL_KEY);
+  SCRIPT_URL = "";
+  document.getElementById("setup-banner").style.display  = "";
+  document.getElementById("clear-url-btn").style.display = "none";
+  setStatus("disconnected");
+}
+
+// ── Status ───────────────────────────────────────────────────
+function setStatus(state, msg) {
+  const dot  = document.getElementById("status-dot");
+  const text = document.getElementById("status-text");
+  const map  = { ok:"#1D9E75", loading:"#BA7517", disconnected:"#9e9d98", error:"#E24B4A" };
+  dot.style.background  = map[state] || map.disconnected;
+  text.textContent = msg || { ok:"Connected", loading:"Loading…", disconnected:"Not connected", error:"Error" }[state] || state;
+}
+
+// ── API ──────────────────────────────────────────────────────
+async function api(method, body) {
+  if (!SCRIPT_URL) { toast("No script URL configured — paste it in the setup box."); return null; }
+  setStatus("loading");
+  try {
+    let res;
+    if (method === "GET") {
+      res = await fetch(SCRIPT_URL + "?action=getAll", { redirect: "follow" });
+    } else {
+      res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(body),
+        redirect: "follow"
+      });
+    }
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    setStatus("ok");
+    return json;
+  } catch(e) {
+    setStatus("error", "Error — check console");
+    console.error("API error:", e);
+    toast("Error: " + e.message);
+    return null;
+  }
+}
+
+async function loadData() {
+  setStatus("loading");
+  const r = await api("GET");
+  if (!r) return;
+  D = r.rows || [];
+  renderAll();
+}
+
+async function addEntry(entry) {
+  const r = await api("POST", { action:"add", entry });
+  if (r && r.ok) { entry.id = r.id; D.push(entry); renderAll(); showSaveMsg("Saved!"); }
+}
+
+async function updateEntry(entry) {
+  const r = await api("POST", { action:"update", entry });
+  if (r && r.ok) { const i=D.findIndex(x=>x.id===entry.id); if(i>-1)D[i]=entry; renderAll(); showSaveMsg("Updated!"); }
+}
+
+async function deleteEntry(id) {
+  if (!confirm("Delete this entry?")) return;
+  const r = await api("POST", { action:"delete", id });
+  if (r && r.ok) { D=D.filter(x=>x.id!==id); renderAll(); toast("Deleted."); }
+}
+
+async function quickUpdate(id, field, val) {
+  const entry = { ...D.find(x=>x.id===id) };
+  if (!entry.id) return;
+  entry[field] = val;
+  const r = await api("POST", { action:"update", entry });
+  if (r && r.ok) { const i=D.findIndex(x=>x.id===id); if(i>-1)D[i]=entry; renderAll(); }
+}
+
+// ── Tabs ─────────────────────────────────────────────────────
+function showTab(n) {
+  ["dashboard","log","history","pending"].forEach((t,i) => {
+    document.getElementById("tab-"+t).style.display = t===n ? "" : "none";
+    document.querySelectorAll(".tab")[i].classList.toggle("active", t===n);
+  });
+  if (n==="history")  renderHistory();
+  if (n==="dashboard") renderDashboard();
+  if (n==="pending")  renderPending();
+}
+
+function setWin(d, el) {
+  W=d;
+  document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("active"));
+  el.classList.add("active");
+  renderDashboard();
+}
+
+// ── Budget form ───────────────────────────────────────────────
+function onBtypeChange() {
+  const t = document.getElementById("f-btype").value;
+  document.getElementById("fg-flat").style.display  = t==="flat"  ? "" : "none";
+  document.getElementById("fg-blo").style.display   = t==="range" ? "" : "none";
+  document.getElementById("row-bhi").style.display  = t==="range" ? "" : "none";
+  document.getElementById("row-bid").style.display  = t!=="none"  ? "" : "none";
+  calcPos();
+}
+
+function getRef() {
+  const t=document.getElementById("f-btype").value;
+  if (t==="flat") { const v=parseFloat(document.getElementById("f-bflat").value); return isNaN(v)?null:v; }
+  if (t==="range") {
+    const lo=parseFloat(document.getElementById("f-blo").value), hi=parseFloat(document.getElementById("f-bhi").value);
+    if (!isNaN(lo)&&!isNaN(hi)) return (lo+hi)/2;
+    if (!isNaN(lo)) return lo;
+    if (!isNaN(hi)) return hi;
+  }
+  return null;
+}
+
+function calcPos() {
+  const bid=parseFloat(document.getElementById("f-bid").value), ref=getRef();
+  const el=document.getElementById("pos-display");
+  if (!bid||!ref) { el.textContent="Enter amounts above"; el.style.color="var(--text3)"; return; }
+  const p=Math.round(((bid-ref)/ref)*100);
+  let label, color;
+  if (Math.abs(p)<=3) { label="At budget"; color="var(--blue)"; }
+  else if (p<0)       { label=Math.abs(p)+"% below budget"; color="var(--green)"; }
+  else                { label=p+"% above budget"; color="var(--amber)"; }
+  el.innerHTML=`<span style="font-weight:500;color:${color};">${label}</span> <span style="font-size:11px;color:var(--text3);">($${Math.round(bid).toLocaleString()} vs $${Math.round(ref).toLocaleString()})</span>`;
+}
+
+// ── Bid position (stored data) ────────────────────────────────
+function bidPos(d) {
+  if (!d.bid||!d.btype||d.btype==="none") return null;
+  let ref=null;
+  if (d.btype==="flat") ref=parseFloat(d.bflat);
+  else if (d.btype==="range") {
+    const lo=parseFloat(d.blo), hi=parseFloat(d.bhi);
+    if (!isNaN(lo)&&!isNaN(hi)) ref=(lo+hi)/2;
+    else if (!isNaN(lo)) ref=lo;
+  }
+  if (!ref) return null;
+  const p=((parseFloat(d.bid)-ref)/ref)*100;
+  return Math.abs(p)<=3?"at":p<0?"below":"above";
+}
+
+function budgetDisplay(d) {
+  if (!d.btype||d.btype==="none") return "—";
+  if (d.btype==="flat"&&d.bflat) return "$"+Number(d.bflat).toLocaleString();
+  if (d.btype==="range") {
+    if (d.blo&&d.bhi) return "$"+Number(d.blo).toLocaleString()+"–$"+Number(d.bhi).toLocaleString();
+    if (d.blo) return "$"+Number(d.blo).toLocaleString()+"+";
+  }
+  return "—";
+}
+
+// ── Save / edit ───────────────────────────────────────────────
+function saveAudition() {
+  const entry = {
+    id: EID||"", date: document.getElementById("f-date").value,
+    title: document.getElementById("f-title").value||"Untitled",
+    type:  document.getElementById("f-type").value||"Other",
+    usage: document.getElementById("f-usage").value||"Unknown / TBD",
+    platform:    document.getElementById("f-platform").value,
+    listened: document.getElementById("f-listened").value,
+    shortlisted: document.getElementById("f-short").value,
+    booked:      document.getElementById("f-booked").value,
+    notes:       document.getElementById("f-notes").value,
+    btype: document.getElementById("f-btype").value,
+    bflat: document.getElementById("f-bflat").value,
+    blo:   document.getElementById("f-blo").value,
+    bhi:   document.getElementById("f-bhi").value,
+    bid:   document.getElementById("f-bid").value,
+  };
+  if (!entry.date) { toast("Please enter a date."); return; }
+  if (EID) { updateEntry(entry); EID=null; resetFormHeader(); }
+  else     { addEntry(entry); }
+  clearForm();
+}
+
+function cancelEdit() { EID=null; resetFormHeader(); clearForm(); }
+
+function resetFormHeader() {
+  document.getElementById("form-title").textContent = "New audition entry";
+  document.getElementById("save-btn").textContent   = "Save audition";
+}
+
+function clearForm() {
+  ["f-title","f-notes","f-bflat","f-blo","f-bhi","f-bid"].forEach(id=>document.getElementById(id).value="");
+  ["f-type","f-usage","f-listened","f-short","f-booked"].forEach(id=>document.getElementById(id).selectedIndex=0);
+  document.getElementById("f-platform").value="Voices.com";
+  document.getElementById("f-btype").value="none";
+  onBtypeChange(); setToday();
+}
+
+function editEntry(id) {
+  const d=D.find(x=>x.id===id); if(!d)return;
+  EID=id;
+  document.getElementById("f-date").value     = d.date;
+  document.getElementById("f-title").value    = d.title;
+  document.getElementById("f-type").value     = d.type;
+  document.getElementById("f-usage").value    = d.usage;
+  document.getElementById("f-platform").value = d.platform||"Voices.com";
+  document.getElementById("f-listened").value = d.listened || "pending";
+  document.getElementById("f-short").value    = d.shortlisted;
+  document.getElementById("f-booked").value   = d.booked;
+  document.getElementById("f-notes").value    = d.notes||"";
+  document.getElementById("f-btype").value    = d.btype||"none";
+  onBtypeChange();
+  if (d.bflat) document.getElementById("f-bflat").value=d.bflat;
+  if (d.blo)   document.getElementById("f-blo").value=d.blo;
+  if (d.bhi)   document.getElementById("f-bhi").value=d.bhi;
+  if (d.bid)   document.getElementById("f-bid").value=d.bid;
+  calcPos();
+  document.getElementById("form-title").textContent="Edit audition";
+  document.getElementById("save-btn").textContent="Update audition";
+  showTab("log");
+}
+
+function setToday() { document.getElementById("f-date").value=new Date().toISOString().split("T")[0]; }
+
+// ── Render ────────────────────────────────────────────────────
+function filtered() {
+  const c=new Date(); c.setDate(c.getDate()-W);
+  return D.filter(d=>new Date(d.date)>=c);
+}
+function pct(n,d) { return d===0?0:Math.round((n/d)*100); }
+function renderAll() { renderDashboard(); updateBadge(); }
+
+function updateBadge() {
+  const n=D.filter(d=>d.shortlisted==="pending"||d.booked==="pending").length;
+  const el=document.getElementById("pb");
+  el.textContent=n; el.style.display=n>0?"inline":"none";
+}
+
+function renderDashboard() {
+  const fd=filtered(), tot=fd.length;
+  const listened = fd.filter(d => d.listened === "yes").length;
+  const listenedShortlisted = fd.filter(d =>
+    d.listened === "yes" && d.shortlisted === "yes"
+  ).length;
+  const sl=fd.filter(d=>d.shortlisted==="yes").length;
+  const bk=fd.filter(d=>d.booked==="yes").length;
+  const wb=fd.filter(d=>d.bid);
+  const avgBid=wb.length?Math.round(wb.reduce((a,b)=>a+Number(b.bid),0)/wb.length):0;
+  document.getElementById("metrics").innerHTML=`
+  <div class="metric">
+    <div class="metric-label">Auditions</div>
+    <div class="metric-value">${tot}</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-label">Listen rate</div>
+    <div class="metric-value">${pct(listened,tot)}%</div>
+    <div class="metric-sub">${listened} listened</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-label">Shortlist rate</div>
+    <div class="metric-value">${pct(sl,tot)}%</div>
+    <div class="metric-sub">${sl} shortlisted</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-label">Listen → Shortlist</div>
+    <div class="metric-value">${pct(listenedShortlisted,listened)}%</div>
+    <div class="metric-sub">${listenedShortlisted} converted</div>
+  </div>
+`;
+  groupBars("b-type",  fd,"type","shortlisted","#378ADD");
+  groupBars("b-usage", fd,"usage","shortlisted","#378ADD");
+  bidBars("b-bidshort",fd,"shortlisted");
+  bidBars("b-bidbook", fd,"booked");
+  renderTrend(fd);
+}
+
+function groupBars(id,fd,field,outcome,color) {
+  const g={};
+  fd.forEach(d=>{const k=d[field]||"Unknown";if(!g[k])g[k]={t:0,h:0};g[k].t++;if(d[outcome]==="yes")g[k].h++;});
+  const el=document.getElementById(id);
+  const rows=Object.entries(g).sort((a,b)=>b[1].t-a[1].t);
+  if(!rows.length){el.innerHTML='<div class="empty">No data yet</div>';return;}
+  el.innerHTML=rows.map(([k,v])=>{const r=pct(v.h,v.t);return`<div class="bar-wrap"><div class="bar-label"><span>${k}</span><span style="font-weight:500">${r}% <span style="font-weight:400;color:var(--text3)">(${v.h}/${v.t})</span></span></div><div class="bar-bg"><div class="bar-fill" style="width:${r}%;background:${color};"></div></div></div>`;}).join("");
+}
+
+function bidBars(id,fd,outcome) {
+  const g={below:{t:0,h:0},at:{t:0,h:0},above:{t:0,h:0}};
+  fd.forEach(d=>{const p=bidPos(d);if(!p)return;g[p].t++;if(d[outcome]==="yes")g[p].h++;});
+  const el=document.getElementById(id);
+  const cols={below:"#1D9E75",at:"#378ADD",above:"#BA7517"};
+  const labs={below:"Below budget",at:"At budget",above:"Above budget"};
+  const rows=Object.entries(g).filter(([,v])=>v.t>0);
+  if(!rows.length){el.innerHTML='<div class="empty">Log bids to see this</div>';return;}
+  el.innerHTML=rows.map(([k,v])=>{const r=pct(v.h,v.t);return`<div class="bar-wrap"><div class="bar-label"><span>${labs[k]}</span><span style="font-weight:500">${r}% <span style="font-weight:400;color:var(--text3)">(${v.h}/${v.t})</span></span></div><div class="bar-bg"><div class="bar-fill" style="width:${r}%;background:${cols[k]};"></div></div></div>`;}).join("");
+}
+
+function renderTrend(fd) {
+  const b={};
+  fd.forEach(d=>{const w=wkLabel(d.date);if(!b[w])b[w]={t:0,s:0};b[w].t++;if(d.shortlisted==="yes")b[w].s++;});
+  const labs=Object.keys(b).sort();
+  const ctx=document.getElementById("trendChart");
+  if(TC){TC.destroy();TC=null;}
+  if(!labs.length){ctx.parentElement.innerHTML='<div class="empty">No data yet — log some auditions!</div>';return;}
+  TC=new Chart(ctx,{type:"bar",data:{labels:labs,datasets:[
+    {label:"Auditions", data:labs.map(l=>b[l].t),backgroundColor:"#B5D4F4",borderRadius:4},
+    {label:"Shortlisted",data:labs.map(l=>b[l].s),backgroundColor:"#378ADD",borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:11}},grid:{display:false}},
+            y:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:"rgba(128,128,128,0.1)"}}}}});
+  document.getElementById("chart-legend").innerHTML=`
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Auditions</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted</span>`;
+}
+
+function wkLabel(s) {
+  const d=new Date(s+"T12:00:00"),st=new Date(d);st.setDate(d.getDate()-d.getDay());
+  return st.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+
+function renderHistory() {
+  const search=document.getElementById("search").value.toLowerCase();
+  const fs=document.getElementById("fil-short").value;
+  const ft=document.getElementById("fil-type").value;
+  const types=[...new Set(D.map(d=>d.type))].sort();
+  const sel=document.getElementById("fil-type");
+  while(sel.options.length>1)sel.remove(1);
+  types.forEach(t=>sel.add(new Option(t,t)));
+  let rows=[...D].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(search)rows=rows.filter(d=>d.title.toLowerCase().includes(search)||(d.notes||"").toLowerCase().includes(search));
+  if(fs)rows=rows.filter(d=>d.shortlisted===fs);
+  if(ft)rows=rows.filter(d=>d.type===ft);
+  const tb=document.getElementById("hist-body");
+  if(!rows.length){tb.innerHTML='<tr><td colspan="9" class="empty">No entries found</td></tr>';return;}
+  tb.innerHTML=rows.map(d=>{
+    const pos=bidPos(d);
+    return`<tr>
+      <td>${fmtDate(d.date)}</td>
+      <td title="${d.title}">${d.title}</td>
+      <td>${d.type}</td>
+      <td>${budgetDisplay(d)}</td>
+      <td>${d.bid?"$"+Number(d.bid).toLocaleString():"—"}</td>
+      <td>${pos?`<span class="badge b-${pos}">${pos}</span>`:"—"}</td>
+      <td><span class="badge ${sBadge(d.shortlisted,"s")}">${d.shortlisted}</span></td>
+      <td><span class="badge ${sBadge(d.booked,"b")}">${d.booked}</span></td>
+      <td><div style="display:flex;gap:4px;">
+        <button class="btn btn-sm" onclick="editEntry('${d.id}')" title="Edit">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteEntry('${d.id}')" title="Delete">🗑</button>
+      </div></td>
+    </tr>`;}).join("");
+}
+
+function renderPending() {
+  const pending=D.filter(d=>d.shortlisted==="pending"||d.booked==="pending").sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const el=document.getElementById("pend-list");
+  if(!pending.length){el.innerHTML='<div class="empty" style="padding:3rem;">No pending items — you\'re all caught up!</div>';return;}
+  el.innerHTML=pending.map(d=>`
+    <div class="pend-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div>
+          <div class="pend-title">${d.title}</div>
+          <div class="pend-sub">${d.type} · ${fmtDate(d.date)} · ${d.platform||"Voices.com"}</div>
+        </div>
+        <button class="btn btn-sm" onclick="editEntry('${d.id}')">✏️ Edit</button>
+      </div>
+      <div class="pend-row">
+        <div>
+          <div class="pend-field-label">Shortlisted?</div>
+          <div class="quick-btns">
+            <span class="badge ${sBadge(d.shortlisted,"s")}">${d.shortlisted}</span>
+            ${d.shortlisted==="pending"?`
+              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','shortlisted','yes')" style="color:#0F6E56;border-color:#1D9E75;">✓ Yes</button>
+              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','shortlisted','no')"  style="color:#A32D2D;border-color:#E24B4A;">✗ No</button>`:""}
+          </div>
+        </div>
+        <div>
+          <div class="pend-field-label">Booked?</div>
+          <div class="quick-btns">
+            <span class="badge ${sBadge(d.booked,"b")}">${d.booked}</span>
+            ${d.booked==="pending"?`
+              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','booked','yes')" style="color:#0F6E56;border-color:#1D9E75;">✓ Yes</button>
+              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','booked','no')"  style="color:#A32D2D;border-color:#E24B4A;">✗ No</button>`:""}
+          </div>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function sBadge(v,type) {
+  if(v==="yes")return type==="b"?"b-booked":"b-short";
+  if(v==="pending")return"b-pending";
+  return"b-no";
+}
+
+function fmtDate(s) {
+  const d=new Date(s+"T12:00:00");
+  return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"2-digit"});
+}
+
+function showSaveMsg(msg) {
+  const el=document.getElementById("save-msg");
+  el.textContent=msg; el.style.display="inline";
+  setTimeout(()=>el.style.display="none",2500);
+}
+
+function toast(msg) {
+  const el=document.getElementById("toast");
+  el.textContent=msg; el.style.display="block";
+  setTimeout(()=>el.style.display="none",2800);
+}
+
+function exportCSV() {
+  if(!D.length){toast("No data to export.");return;}
+  const h=["Date","Title","Type","Usage","Platform","Budget Type","Budget","Bid","Bid Position","Shortlisted","Booked","Notes"];
+  const rows=D.map(d=>[d.date,d.title,d.type,d.usage,d.platform||"",d.btype||"",budgetDisplay(d),d.bid||"",bidPos(d)||"",d.shortlisted,d.booked,d.notes||""]);
+  const csv=[h,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="auditions.csv";a.click();
+}
+</script>
+</body>
+</html>
