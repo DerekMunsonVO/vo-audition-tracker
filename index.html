@@ -200,6 +200,10 @@
       <button class="time-btn" onclick="setWin(365,this)">1 year</button>
       <button class="time-btn" onclick="setWin(99999,this)">All time</button>
     </div>
+   <div class="card" id="shortlist-card">
+      <div class="card-title">Current Shortlists</div>
+      <div id="shortlist-summary"></div>
+    </div>
     <div class="metric-grid" id="metrics"></div>
     <div class="grid-2">
       <div class="card"><div class="card-title">Shortlist rate by project type</div><div id="b-type"></div></div>
@@ -654,13 +658,63 @@ function renderDashboard() {
     <div class="metric-sub">${listenedShortlisted} converted</div>
   </div>
 `;
-  groupBars("b-type",  fd,"type","shortlisted","#378ADD");
+ renderCurrentShortlists(fd); 
+ groupBars("b-type",  fd,"type","shortlisted","#378ADD");
   groupBars("b-usage", fd,"usage","shortlisted","#378ADD");
   bidBars("b-bidshort",fd,"shortlisted");
   bidBars("b-bidbook", fd,"booked");
   renderTrend(fd);
 }
 
+function renderCurrentShortlists(fd) {
+  const shortlisted = fd.filter(d =>
+    d.shortlisted === "yes" &&
+    d.booked !== "yes"
+  );
+
+  const el = document.getElementById("shortlist-summary");
+
+  if (!shortlisted.length) {
+    el.innerHTML = '<div class="empty">No active shortlists right now</div>';
+    return;
+  }
+
+  const total = shortlisted.reduce((sum, d) =>
+    sum + Number(d.bid || 0), 0
+  );
+
+  el.innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:24px;font-weight:500;">
+        $${total.toLocaleString()}
+      </div>
+      <div style="font-size:12px;color:var(--text2);">
+        Potential shortlist earnings (${shortlisted.length})
+      </div>
+    </div>
+
+    ${shortlisted.map(d => `
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:10px 0;
+        border-top:0.5px solid var(--border);
+      ">
+        <div>
+          <div style="font-weight:500;">${d.title}</div>
+          <div style="font-size:12px;color:var(--text2);">
+            ${d.type}
+          </div>
+        </div>
+        <div style="font-weight:500;">
+          $${Number(d.bid || 0).toLocaleString()}
+        </div>
+      </div>
+    `).join("")}
+  `;
+}
+ 
 function groupBars(id,fd,field,outcome,color) {
   const g={};
   fd.forEach(d=>{const k=d[field]||"Unknown";if(!g[k])g[k]={t:0,h:0};g[k].t++;if(d[outcome]==="yes")g[k].h++;});
