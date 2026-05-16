@@ -251,27 +251,27 @@
       <div class="form-row">
         <div class="form-group"><label>Platform</label>
           <select id="f-platform">
-            <option>Voices.com</option><option>Voice123</option><option>Direct</option><option>Other</option>
+            <option>Voices.com</option><option>Voice123</option><option>CastVoices</option><option>Direct</option><option>Other</option>
           </select>
         </div>
         <div class="form-group">
           <label>Listened?</label>
             <select id="f-listened">
-              <option value="pending">Pending / unknown</option>
+              <option value="pending">Pending</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>
             </select>
         </div>
         <div class="form-group"><label>Shortlisted?</label>
           <select id="f-short">
-            <option value="no">No</option><option value="yes">Yes</option><option value="pending">Pending / unknown</option>
+            <option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option>
           </select>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Booked?</label>
           <select id="f-booked">
-            <option value="no">No</option><option value="yes">Yes</option><option value="pending">Pending</option>
+            <option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option>
           </select>
         </div>
         <div class="form-group"><label>Notes (optional)</label>
@@ -683,34 +683,47 @@ function renderCurrentShortlists(fd) {
     sum + Number(d.bid || 0), 0
   );
 
+  const bookedFromShortlist = fd.filter(d =>
+    d.shortlisted === "yes" && d.booked === "yes"
+  ).length;
+
+  const totalHistoricalShortlists = fd.filter(d =>
+    d.shortlisted === "yes"
+  ).length;
+
+  const closeRate = totalHistoricalShortlists
+    ? Math.round((bookedFromShortlist / totalHistoricalShortlists) * 100)
+  : 0;
+
+  const expectedValue = Math.round(total * (closeRate / 100));
+ 
   el.innerHTML = `
     <div style="margin-bottom:14px;">
       <div style="font-size:24px;font-weight:500;">
         $${total.toLocaleString()}
       </div>
-      <div style="font-size:12px;color:var(--text2);">
+    
+      <div style="font-size:12px;color:var(--text2);margin-top:4px;">
         Potential shortlist earnings (${shortlisted.length})
       </div>
-    </div>
-
-    ${shortlisted.map(d => `
+    
       <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        padding:10px 0;
-        border-top:0.5px solid var(--border);
+        margin-top:10px;
+        padding:10px 12px;
+        background:var(--blue-bg);
+        border-radius:var(--radius);
       ">
-        <div>
-          <div style="font-weight:500;">${d.title}</div>
-          <div style="font-size:12px;color:var(--text2);">
-            ${d.type}
-          </div>
+        <div style="font-size:12px;color:var(--blue-text);">
+          Historical close rate
         </div>
-        <div style="font-weight:500;">
-          $${Number(d.bid || 0).toLocaleString()}
+        <div style="font-size:18px;font-weight:500;color:var(--blue-text);">
+          ${closeRate}%
+        </div>
+        <div style="font-size:12px;color:var(--blue-text);margin-top:2px;">
+          Expected value: $${expectedValue.toLocaleString()}
         </div>
       </div>
+    </div>
     `).join("")}
   `;
 }
