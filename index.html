@@ -635,31 +635,31 @@ function renderDashboard() {
   const wb=fd.filter(d=>d.bid);
   const avgBid=wb.length?Math.round(wb.reduce((a,b)=>a+Number(b.bid),0)/wb.length):0;
   document.getElementById("metrics").innerHTML=`
-  <div class="metric">
-    <div class="metric-label">Auditions</div>
-    <div class="metric-value">${tot}</div>
-  </div>
-
-  <div class="metric">
-    <div class="metric-label">Listen rate</div>
-    <div class="metric-value">${pct(listened,tot)}%</div>
-    <div class="metric-sub">${listened} listened</div>
-  </div>
-
-  <div class="metric">
-    <div class="metric-label">Shortlist rate</div>
-    <div class="metric-value">${pct(sl,tot)}%</div>
-    <div class="metric-sub">${sl} shortlisted</div>
-  </div>
-
-  <div class="metric">
-    <div class="metric-label">Listen → Shortlist</div>
-    <div class="metric-value">${pct(listenedShortlisted,listened)}%</div>
-    <div class="metric-sub">${listenedShortlisted} converted</div>
-  </div>
-`;
- renderCurrentShortlists(fd); 
- groupBars("b-type",  fd,"type","shortlisted","#378ADD");
+    <div class="metric">
+      <div class="metric-label">Auditions</div>
+      <div class="metric-value">${tot}</div>
+    </div>
+  
+    <div class="metric">
+      <div class="metric-label">Listen rate</div>
+      <div class="metric-value">${pct(listened,tot)}%</div>
+      <div class="metric-sub">${listened} listened</div>
+    </div>
+  
+    <div class="metric">
+      <div class="metric-label">Shortlist rate</div>
+      <div class="metric-value">${pct(sl,tot)}%</div>
+      <div class="metric-sub">${sl} shortlisted</div>
+    </div>
+  
+    <div class="metric">
+      <div class="metric-label">Listen → Shortlist</div>
+      <div class="metric-value">${pct(listenedShortlisted,listened)}%</div>
+      <div class="metric-sub">${listenedShortlisted} converted</div>
+    </div>
+  `;
+  renderCurrentShortlists(fd); 
+  groupBars("b-type", fd,"type","shortlisted","#378ADD");
   groupBars("b-usage", fd,"usage","shortlisted","#378ADD");
   bidBars("b-bidshort",fd,"shortlisted");
   bidBars("b-bidbook", fd,"booked");
@@ -754,7 +754,11 @@ function renderTrend(fd) {
   const labs=Object.keys(b).sort();
   const ctx=document.getElementById("trendChart");
   if(TC){TC.destroy();TC=null;}
-  if(!labs.length){ctx.parentElement.innerHTML='<div class="empty">No data yet — log some auditions!</div>';return;}
+  if(!labs.length){
+  document.getElementById("chart-legend").innerHTML =
+    '<div class="empty">No data yet — log some auditions!</div>';
+  return;
+  }
   TC=new Chart(ctx,{type:"bar",data:{labels:labs,datasets:[
     {label:"Auditions", data:labs.map(l=>b[l].t),backgroundColor:"#B5D4F4",borderRadius:4},
     {label:"Shortlisted",data:labs.map(l=>b[l].s),backgroundColor:"#378ADD",borderRadius:4}
