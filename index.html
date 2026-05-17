@@ -411,9 +411,7 @@
 
   <!-- HIRED JOBS -->
   <div id="tab-hired" style="display:none;">
-    <div class="time-filter" id="hired-year-filter">
-      <button class="time-btn active" onclick="setHiredYear('all', this)">All time</button>
-    </div>
+    <div class="time-filter" id="hired-year-filter"></div>
     <div class="card">
       <div class="card-title">Hired jobs</div>
       <div class="table-wrap">
@@ -878,64 +876,6 @@ function bidBars(id,fd,outcome) {
   const rows=Object.entries(g).filter(([,v])=>v.t>0);
   if(!rows.length){el.innerHTML='<div class="empty">Log bids to see this</div>';return;}
   el.innerHTML=rows.map(([k,v])=>{const r=pct(v.h,v.t);return`<div class="bar-wrap"><div class="bar-label"><span>${labs[k]}</span><span style="font-weight:500">${r}% <span style="font-weight:400;color:var(--text3)">(${v.h}/${v.t})</span></span></div><div class="bar-bg"><div class="bar-fill" style="width:${r}%;background:${cols[k]};"></div></div></div>`;}).join("");
-}
-
-function renderHired() {
-  const hired = [...D]
-    .filter(d => d.booked === "yes")
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  const tb = document.getElementById("hired-body");
-  const totalsEl = document.getElementById("hired-totals");
-
-  if (!hired.length) {
-    tb.innerHTML = '<tr><td colspan="6" class="empty">No hired jobs yet — they\'re coming!</td></tr>';
-    totalsEl.innerHTML = "";
-    return;
-  }
-
-  let totalGross = 0;
-  let totalNet = 0;
-
-  tb.innerHTML = hired.map(d => {
-    const gross = d.bid ? Number(d.bid) : null;
-    const isVoicesCom = (d.platform || "").toLowerCase().includes("voices.com");
-    const net = gross && isVoicesCom ? Math.round(gross * 0.80) : gross;
-
-    if (gross) totalGross += gross;
-    if (net)   totalNet   += net;
-
-    return `<tr>
-      <td>${fmtDate(d.date)}</td>
-      <td title="${d.title}">${d.title}</td>
-      <td>${d.type}</td>
-      <td>${d.platform || "—"}</td>
-      <td>${gross ? "$" + gross.toLocaleString() : "—"}</td>
-      <td style="color:var(--green);font-weight:500;">
-        ${net ? "$" + net.toLocaleString() : "—"}
-        ${isVoicesCom && gross ? '<span style="font-size:11px;color:var(--text3);font-weight:400;"> (−20%)</span>' : ""}
-      </td>
-    </tr>`;
-  }).join("");
-
-  totalsEl.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px;">
-      <div class="metric">
-        <div class="metric-label">Jobs booked</div>
-        <div class="metric-value">${hired.length}</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Total gross</div>
-        <div class="metric-value">$${totalGross.toLocaleString()}</div>
-        <div class="metric-sub">Before platform fees</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Total net</div>
-        <div class="metric-value" style="color:var(--green);">$${totalNet.toLocaleString()}</div>
-        <div class="metric-sub">After Voices.com 20%</div>
-      </div>
-    </div>
-  `;
 }
  
 function renderTypeCount(fd) {
