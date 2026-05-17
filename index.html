@@ -732,7 +732,7 @@ function filtered() {
   return D.filter(d=>new Date(d.date)>=c);
 }
 function pct(n,d) { return d===0?0:Math.round((n/d)*100); }
-function renderAll() { renderDashboard(); updateBadge(); }
+function renderAll() { renderDashboard(); updateBadge(); renderHiredYearFilter(); }
 
 function updateBadge() {
   const n=D.filter(d=>d.shortlisted==="pending"||d.booked==="pending").length;
