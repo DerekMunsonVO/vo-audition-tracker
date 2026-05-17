@@ -177,17 +177,17 @@
     <div class="status-wrap">
       <span id="status-dot"></span>
       <span id="status-text">Not connected</span>
-      <button id="clear-url-btn" onclick="clearScriptUrl()">Change URL</button>
+      <!-- <button id="clear-url-btn" onclick="clearScriptUrl()">Change URL</button> -->
     </div>
   </div>
 
-  <div id="setup-banner">
+  <!--<div id="setup-banner">
     <h2>⚙️ One-time setup</h2>
     <p>Deploy your Google Apps Script as a web app, copy the URL, and paste it below. It's saved in your browser and never shared.</p>
     <label for="script-url-input">Apps Script web app URL</label>
     <input type="url" id="script-url-input" placeholder="https://script.google.com/macros/s/…/exec">
     <button class="btn btn-primary" onclick="saveScriptUrl()">Save &amp; connect</button>
-  </div>
+  </div>-->
 
   <div class="tabs">
     <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
@@ -401,40 +401,48 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 // ── Config ───────────────────────────────────────────────────
-const URL_KEY = "audition_tracker_script_url";
-let SCRIPT_URL = localStorage.getItem(URL_KEY) || "";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZnP8JGd9czMoyY43_x9wl_8REX5qpS5asW7em2w1uSBmajpOsxO2afabJgpuRTIVh/exec";
+const APP_PASSWORD = "MunsonVO2026";
 let D = [], W = 7, TC = null, EID = null;
+
+// ── Auth ─────────────────────────────────────────────────────
+function checkAuth() {
+  const saved = localStorage.getItem("tracker_auth");
+  if (saved === "true") return true;
+
+  const input = prompt("Enter password to access Audition Tracker:");
+  if (input === APP_PASSWORD) {
+    localStorage.setItem("tracker_auth", "true");
+    return true;
+  }
+
+  document.body.innerHTML = `
+    <div style="
+      display:flex; align-items:center; justify-content:center;
+      height:100vh; font-family:-apple-system,sans-serif;
+      background:#eeedea; color:#1a1a18;
+    ">
+      <div style="text-align:center;">
+        <div style="font-size:32px;margin-bottom:12px;">🔒</div>
+        <div style="font-size:18px;font-weight:500;margin-bottom:8px;">Access denied</div>
+        <div style="font-size:14px;color:#5f5e5a;margin-bottom:20px;">Incorrect password.</div>
+        <button onclick="location.reload()" style="
+          font-family:inherit; font-size:14px; padding:8px 16px;
+          border-radius:8px; cursor:pointer; border:0.5px solid rgba(0,0,0,0.22);
+          background:#1a1a18; color:#fff;
+        ">Try again</button>
+      </div>
+    </div>`;
+  return false;
+}
 
 // ── Init ─────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
+  if (!checkAuth()) return;
   setToday();
-  if (SCRIPT_URL) {
-    document.getElementById("setup-banner").style.display = "none";
-    document.getElementById("script-url-input").value     = SCRIPT_URL;
-    document.getElementById("clear-url-btn").style.display = "inline";
-    loadData();
-  }
+  loadData();
   renderDashboard();
 });
-
-// ── Setup ────────────────────────────────────────────────────
-function saveScriptUrl() {
-  const v = document.getElementById("script-url-input").value.trim();
-  if (!v) { toast("Please paste your Apps Script URL first."); return; }
-  SCRIPT_URL = v;
-  localStorage.setItem(URL_KEY, v);
-  document.getElementById("setup-banner").style.display  = "none";
-  document.getElementById("clear-url-btn").style.display = "inline";
-  loadData();
-}
-
-function clearScriptUrl() {
-  localStorage.removeItem(URL_KEY);
-  SCRIPT_URL = "";
-  document.getElementById("setup-banner").style.display  = "";
-  document.getElementById("clear-url-btn").style.display = "none";
-  setStatus("disconnected");
-}
 
 // ── Status ───────────────────────────────────────────────────
 function setStatus(state, msg) {
