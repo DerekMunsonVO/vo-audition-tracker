@@ -440,7 +440,7 @@
 // ── Config ───────────────────────────────────────────────────
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZnP8JGd9czMoyY43_x9wl_8REX5qpS5asW7em2w1uSBmajpOsxO2afabJgpuRTIVh/exec";
 const APP_PASSWORD = "MunsonVO2026";
-let D = [], W = 7, TC = null, EID = null; HIRED_YEAR = "all";
+let D = [], W = 7, TC = null, EID = null, HIRED_YEAR = "all";
 
 // ── Auth ─────────────────────────────────────────────────────
 function checkAuth() {
@@ -523,7 +523,7 @@ function setStatus(state, msg) {
 
 // ── API ──────────────────────────────────────────────────────
 async function api(method, body) {
-  if (!SCRIPT_URL) { toast("No script URL configured — paste it in the setup box."); return null; }
+  if (!SCRIPT_URL) { toast("No script URL configured."); return null; }
   setStatus("loading");
   try {
     let res;
@@ -634,7 +634,7 @@ function calcPos() {
   el.innerHTML=`<span style="font-weight:500;color:${color};">${label}</span> <span style="font-size:11px;color:var(--text3);">($${Math.round(bid).toLocaleString()} vs $${Math.round(ref).toLocaleString()})</span>`;
 }
 
-// ── Bid position (stored data) ────────────────────────────────
+// ── Bid position ──────────────────────────────────────────────
 function bidPos(d) {
   if (!d.bid||!d.btype||d.btype==="none") return null;
   let ref=null;
@@ -667,7 +667,7 @@ function saveAudition() {
     type:  document.getElementById("f-type").value||"Other",
     usage: document.getElementById("f-usage").value||"Unknown / TBD",
     platform:    document.getElementById("f-platform").value,
-    listened: document.getElementById("f-listened").value,
+    listened:    document.getElementById("f-listened").value,
     shortlisted: document.getElementById("f-short").value,
     booked:      document.getElementById("f-booked").value,
     notes:       document.getElementById("f-notes").value,
@@ -706,7 +706,7 @@ function editEntry(id) {
   document.getElementById("f-type").value     = d.type;
   document.getElementById("f-usage").value    = d.usage;
   document.getElementById("f-platform").value = d.platform||"Voices.com";
-  document.getElementById("f-listened").value = d.listened || "pending";
+  document.getElementById("f-listened").value = d.listened||"pending";
   document.getElementById("f-short").value    = d.shortlisted;
   document.getElementById("f-booked").value   = d.booked;
   document.getElementById("f-notes").value    = d.notes||"";
@@ -738,42 +738,35 @@ function updateBadge() {
   el.textContent=n; el.style.display=n>0?"inline":"none";
 }
 
+// ── Dashboard ─────────────────────────────────────────────────
 function renderDashboard() {
   const fd=filtered(), tot=fd.length;
-  const listened = fd.filter(d => d.listened === "yes").length;
-  const listenedShortlisted = fd.filter(d =>
-    d.listened === "yes" && d.shortlisted === "yes"
-  ).length;
+  const listened=fd.filter(d=>d.listened==="yes").length;
+  const listenedShortlisted=fd.filter(d=>d.listened==="yes"&&d.shortlisted==="yes").length;
   const sl=fd.filter(d=>d.shortlisted==="yes").length;
   const bk=fd.filter(d=>d.booked==="yes").length;
-  const wb=fd.filter(d=>d.bid);
-  const avgBid=wb.length?Math.round(wb.reduce((a,b)=>a+Number(b.bid),0)/wb.length):0;
   document.getElementById("metrics").innerHTML=`
-  <div class="metric">
-    <div class="metric-label">Auditions</div>
-    <div class="metric-value">${tot}</div>
-  </div>
-
-  <div class="metric">
-    <div class="metric-label">Listen rate</div>
-    <div class="metric-value">${pct(listened,tot)}%</div>
-    <div class="metric-sub">${listened} listened</div>
-  </div>
-
-  <div class="metric">
-    <div class="metric-label">Shortlist rate</div>
-    <div class="metric-value">${pct(sl,tot)}%</div>
-    <div class="metric-sub">${sl} shortlisted</div>
-  </div>
-
-  <div class="metric">
-    <div class="metric-label">Listen → Shortlist</div>
-    <div class="metric-value">${pct(listenedShortlisted,listened)}%</div>
-    <div class="metric-sub">${listenedShortlisted} converted</div>
-  </div>
-`;
- renderCurrentShortlists(fd); 
- groupBars("b-type",  fd,"type","shortlisted","#378ADD");
+    <div class="metric">
+      <div class="metric-label">Auditions</div>
+      <div class="metric-value">${tot}</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Listen rate</div>
+      <div class="metric-value">${pct(listened,tot)}%</div>
+      <div class="metric-sub">${listened} listened</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Shortlist rate</div>
+      <div class="metric-value">${pct(sl,tot)}%</div>
+      <div class="metric-sub">${sl} shortlisted</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Listen → Shortlist</div>
+      <div class="metric-value">${pct(listenedShortlisted,listened)}%</div>
+      <div class="metric-sub">${listenedShortlisted} converted</div>
+    </div>`;
+  renderCurrentShortlists(fd);
+  groupBars("b-type",  fd,"type","shortlisted","#378ADD");
   groupBars("b-usage", fd,"usage","shortlisted","#378ADD");
   bidBars("b-bidshort",fd,"shortlisted");
   bidBars("b-bidbook", fd,"booked");
@@ -782,82 +775,39 @@ function renderDashboard() {
 }
 
 function renderCurrentShortlists(fd) {
-  const shortlisted = fd.filter(d =>
-    d.shortlisted === "yes" && d.booked !== "yes"
-  );
-
-  const el = document.getElementById("shortlist-summary");
-
-  if (!shortlisted.length) {
-    el.innerHTML = '<div class="empty">No active shortlists right now</div>';
-    return;
-  }
-
-  const total = shortlisted.reduce((sum, d) =>
-    sum + Number(d.bid || 0), 0
-  );
-
-  const bookedFromShortlist = fd.filter(d =>
-    d.shortlisted === "yes" && d.booked === "yes"
-  ).length;
-
-  const totalHistoricalShortlists = fd.filter(d =>
-    d.shortlisted === "yes"
-  ).length;
-
-  const closeRate = totalHistoricalShortlists
-    ? Math.round((bookedFromShortlist / totalHistoricalShortlists) * 100)
-    : 0;
-
-  const expectedValue = Math.round(total * (closeRate / 100));
-
-  const jobRows = shortlisted
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .map(d => `
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        padding:8px 0;
-        border-bottom:0.5px solid var(--border);
-        font-size:13px;
-      ">
-        <div>
-          <div style="font-weight:500;">${d.title}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px;">${d.type} · ${fmtDate(d.date)}</div>
-        </div>
-        <div style="font-weight:500;color:var(--green);white-space:nowrap;margin-left:12px;">
-          ${d.bid ? "$" + Number(d.bid).toLocaleString() : "—"}
-        </div>
+  const shortlisted=fd.filter(d=>d.shortlisted==="yes"&&d.booked!=="yes");
+  const el=document.getElementById("shortlist-summary");
+  if (!shortlisted.length) { el.innerHTML='<div class="empty">No active shortlists right now</div>'; return; }
+  const total=shortlisted.reduce((sum,d)=>sum+Number(d.bid||0),0);
+  const bookedFromShortlist=fd.filter(d=>d.shortlisted==="yes"&&d.booked==="yes").length;
+  const totalHistoricalShortlists=fd.filter(d=>d.shortlisted==="yes").length;
+  const closeRate=totalHistoricalShortlists?Math.round((bookedFromShortlist/totalHistoricalShortlists)*100):0;
+  const expectedValue=Math.round(total*(closeRate/100));
+  const jobRows=shortlisted.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+      <div>
+        <div style="font-weight:500;">${d.title}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${d.type} · ${fmtDate(d.date)}</div>
       </div>
-    `).join("");
-
-  el.innerHTML = `
-    <div style="margin-bottom:14px;">
-      ${jobRows}
-    </div>
+      <div style="font-weight:500;color:var(--green);white-space:nowrap;margin-left:12px;">
+        ${d.bid?"$"+Number(d.bid).toLocaleString():"—"}
+      </div>
+    </div>`).join("");
+  el.innerHTML=`
+    <div style="margin-bottom:14px;">${jobRows}</div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
       <div>
         <div style="font-size:12px;color:var(--text2);">Potential earnings</div>
         <div style="font-size:20px;font-weight:500;">$${total.toLocaleString()}</div>
       </div>
-      <div style="
-        padding:10px 12px;
-        background:var(--blue-bg);
-        border-radius:var(--radius);
-        flex:1;
-        min-width:160px;
-      ">
+      <div style="padding:10px 12px;background:var(--blue-bg);border-radius:var(--radius);flex:1;min-width:160px;">
         <div style="font-size:12px;color:var(--blue-text);">Historical close rate</div>
         <div style="font-size:18px;font-weight:500;color:var(--blue-text);">${closeRate}%</div>
-        <div style="font-size:12px;color:var(--blue-text);margin-top:2px;">
-          Expected value: $${expectedValue.toLocaleString()}
-        </div>
+        <div style="font-size:12px;color:var(--blue-text);margin-top:2px;">Expected value: $${expectedValue.toLocaleString()}</div>
       </div>
-    </div>
-  `;
+    </div>`;
 }
- 
+
 function groupBars(id,fd,field,outcome,color) {
   const g={};
   fd.forEach(d=>{const k=d[field]||"Unknown";if(!g[k])g[k]={t:0,h:0};g[k].t++;if(d[outcome]==="yes")g[k].h++;});
@@ -877,129 +827,107 @@ function bidBars(id,fd,outcome) {
   if(!rows.length){el.innerHTML='<div class="empty">Log bids to see this</div>';return;}
   el.innerHTML=rows.map(([k,v])=>{const r=pct(v.h,v.t);return`<div class="bar-wrap"><div class="bar-label"><span>${labs[k]}</span><span style="font-weight:500">${r}% <span style="font-weight:400;color:var(--text3)">(${v.h}/${v.t})</span></span></div><div class="bar-bg"><div class="bar-fill" style="width:${r}%;background:${cols[k]};"></div></div></div>`;}).join("");
 }
- 
+
 function renderTypeCount(fd) {
-  const g = {};
-  fd.forEach(d => {
-    const k = d.type || "Unknown";
-    if (!g[k]) g[k] = { total: 0, short: 0, booked: 0 };
+  const g={};
+  fd.forEach(d=>{
+    const k=d.type||"Unknown";
+    if(!g[k])g[k]={total:0,short:0,booked:0};
     g[k].total++;
-    if (d.shortlisted === "yes") g[k].short++;
-    if (d.booked === "yes") g[k].booked++;
+    if(d.shortlisted==="yes")g[k].short++;
+    if(d.booked==="yes")g[k].booked++;
   });
-
-  const el = document.getElementById("b-type-count");
-  const rows = Object.entries(g).sort((a, b) => b[1].total - a[1].total);
-
-  if (!rows.length) { el.innerHTML = '<div class="empty">No data yet</div>'; return; }
-
-  const max = rows[0][1].total;
-
-  el.innerHTML = rows.map(([k, v]) => {
-    const totalPct   = Math.round((v.total / max) * 100);
-    const shortPct   = Math.round((v.short / v.total) * 100);
-    const bookedPct  = Math.round((v.booked / v.total) * 100);
-    const neitherPct = 100 - shortPct - bookedPct;
-
-    return `
-      <div class="bar-wrap">
-        <div class="bar-label">
-          <span>${k}</span>
-          <span style="font-weight:500">${v.total}
-            <span style="font-weight:400;color:var(--text3);">
-              · ${v.short} shortlisted · ${v.booked} booked
-            </span>
-          </span>
-        </div>
-        <div class="bar-bg">
-          <div style="
-            width:${totalPct}%;
-            height:100%;
-            border-radius:4px;
-            overflow:hidden;
-            display:flex;
-          ">
-            <div style="width:${bookedPct}%;  background:#1D9E75;"></div>
-            <div style="width:${shortPct}%;   background:#378ADD;"></div>
-            <div style="width:${neitherPct}%; background:#B5D4F4;"></div>
-          </div>
+  const el=document.getElementById("b-type-count");
+  const rows=Object.entries(g).sort((a,b)=>b[1].total-a[1].total);
+  if(!rows.length){el.innerHTML='<div class="empty">No data yet</div>';return;}
+  const max=rows[0][1].total;
+  el.innerHTML=rows.map(([k,v])=>{
+    const totalPct  =Math.round((v.total/max)*100);
+    const bookedPct =Math.round((v.booked/v.total)*100);
+    const shortPct  =Math.round((v.short/v.total)*100);
+    const neitherPct=100-shortPct-bookedPct;
+    return`<div class="bar-wrap">
+      <div class="bar-label">
+        <span>${k}</span>
+        <span style="font-weight:500">${v.total}
+          <span style="font-weight:400;color:var(--text3);">· ${v.short} shortlisted · ${v.booked} booked</span>
+        </span>
+      </div>
+      <div class="bar-bg">
+        <div style="width:${totalPct}%;height:100%;border-radius:4px;overflow:hidden;display:flex;">
+          <div style="width:${bookedPct}%;background:#1D9E75;"></div>
+          <div style="width:${shortPct}%;background:#378ADD;"></div>
+          <div style="width:${neitherPct}%;background:#B5D4F4;"></div>
         </div>
       </div>
-    `;
+    </div>`;
   }).join("");
-
-function renderHiredYearFilter() {
-  const years = [...new Set(
-    D.filter(d => d.booked === "yes")
-     .map(d => new Date(d.date + "T12:00:00").getFullYear())
-  )].sort((a, b) => b - a);
-
-  const container = document.getElementById("hired-year-filter");
-  if (!container) return;
-
-  container.innerHTML =
-    `<button class="time-btn ${HIRED_YEAR === "all" ? "active" : ""}" onclick="setHiredYear('all', this)">All time</button>`
-    + years.map(y =>
-        `<button class="time-btn ${HIRED_YEAR === y ? "active" : ""}" onclick="setHiredYear(${y}, this)">${y}</button>`
-      ).join("");
+  el.insertAdjacentHTML("beforeend",`
+    <div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-top:12px;">
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>Booked</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Not shortlisted</span>
+    </div>`);
 }
 
-function setHiredYear(year, el) {
-  HIRED_YEAR = year;
-  document.querySelectorAll("#hired-year-filter .time-btn").forEach(b => b.classList.remove("active"));
+// ── Hired Jobs ────────────────────────────────────────────────
+function renderHiredYearFilter() {
+  const years=[...new Set(
+    D.filter(d=>d.booked==="yes")
+     .map(d=>new Date(d.date+"T12:00:00").getFullYear())
+  )].sort((a,b)=>b-a);
+  const container=document.getElementById("hired-year-filter");
+  if(!container)return;
+  container.innerHTML=
+    `<button class="time-btn ${HIRED_YEAR==="all"?"active":""}" onclick="setHiredYear('all',this)">All time</button>`
+    +years.map(y=>`<button class="time-btn ${HIRED_YEAR===y?"active":""}" onclick="setHiredYear(${y},this)">${y}</button>`).join("");
+}
+
+function setHiredYear(year,el) {
+  HIRED_YEAR=year;
+  document.querySelectorAll("#hired-year-filter .time-btn").forEach(b=>b.classList.remove("active"));
   el.classList.add("active");
   renderHired();
 }
 
 function renderHired() {
   renderHiredYearFilter();
-
-  let hired = [...D]
-    .filter(d => d.booked === "yes")
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  if (HIRED_YEAR !== "all") {
-    hired = hired.filter(d =>
-      new Date(d.date + "T12:00:00").getFullYear() === HIRED_YEAR
-    );
+  let hired=[...D].filter(d=>d.booked==="yes").sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(HIRED_YEAR!=="all"){
+    hired=hired.filter(d=>new Date(d.date+"T12:00:00").getFullYear()===HIRED_YEAR);
   }
-
-  const tb = document.getElementById("hired-body");
-  const totalsEl = document.getElementById("hired-totals");
-
-  if (!hired.length) {
-    tb.innerHTML = '<tr><td colspan="6" class="empty">No hired jobs yet — they\'re coming!</td></tr>';
-    totalsEl.innerHTML = "";
+  const tb=document.getElementById("hired-body");
+  const totalsEl=document.getElementById("hired-totals");
+  if(!hired.length){
+    tb.innerHTML='<tr><td colspan="6" class="empty">No hired jobs yet — they\'re coming!</td></tr>';
+    totalsEl.innerHTML="";
     return;
   }
-
-  let totalGross = 0, totalNet = 0;
-
-  tb.innerHTML = hired.map(d => {
-    const gross = d.bid ? Number(d.bid) : null;
-    const isVoices = (d.platform || "").toLowerCase().includes("voices.com");
-    const net = gross && isVoices ? Math.round(gross * 0.80) : gross;
-    if (gross) totalGross += gross;
-    if (net)   totalNet   += net;
-    return `<tr>
+  let totalGross=0,totalNet=0;
+  tb.innerHTML=hired.map(d=>{
+    const gross=d.bid?Number(d.bid):null;
+    const isVoices=(d.platform||"").toLowerCase().includes("voices.com");
+    const net=gross&&isVoices?Math.round(gross*0.80):gross;
+    if(gross)totalGross+=gross;
+    if(net)totalNet+=net;
+    return`<tr>
       <td>${fmtDate(d.date)}</td>
       <td title="${d.title}">${d.title}</td>
       <td>${d.type}</td>
-      <td>${d.platform || "—"}</td>
-      <td>${gross ? "$" + gross.toLocaleString() : "—"}</td>
+      <td>${d.platform||"—"}</td>
+      <td>${gross?"$"+gross.toLocaleString():"—"}</td>
       <td style="color:var(--green);font-weight:500;">
-        ${net ? "$" + net.toLocaleString() : "—"}
-        ${isVoices && gross ? '<span style="font-size:11px;color:var(--text3);font-weight:400;"> (−20%)</span>' : ""}
+        ${net?"$"+net.toLocaleString():"—"}
+        ${isVoices&&gross?'<span style="font-size:11px;color:var(--text3);font-weight:400;"> (−20%)</span>':""}
       </td>
     </tr>`;
   }).join("");
-
-  totalsEl.innerHTML = `
+  totalsEl.innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px;">
       <div class="metric">
         <div class="metric-label">Jobs booked</div>
         <div class="metric-value">${hired.length}</div>
-        ${HIRED_YEAR !== "all" ? `<div class="metric-sub">${HIRED_YEAR}</div>` : ""}
+        ${HIRED_YEAR!=="all"?`<div class="metric-sub">${HIRED_YEAR}</div>`:""}
       </div>
       <div class="metric">
         <div class="metric-label">Total gross</div>
@@ -1012,82 +940,44 @@ function renderHired() {
         <div class="metric-sub">After Voices.com 20%</div>
       </div>
     </div>`;
-  }
-  
-    // Legend
-    el.insertAdjacentHTML("beforeend", `
-      <div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-top:12px;">
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>Booked
-        </span>
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted
-        </span>
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Not shortlisted
-        </span>
-      </div>
-    `);
-  }
- 
+}
+
+// ── Trend chart ───────────────────────────────────────────────
 function renderTrend(fd) {
-  const b = {};
-  const useWeekly = W > 30;
-
-  fd.forEach(d => {
-    const w = useWeekly ? wkLabel(d.date) : dayLabel(d.date);
-    if (!b[w]) b[w] = { t: 0, s: 0 };
+  const b={};
+  const useWeekly=W>30;
+  fd.forEach(d=>{
+    const w=useWeekly?wkLabel(d.date):dayLabel(d.date);
+    if(!b[w])b[w]={t:0,s:0};
     b[w].t++;
-    if (d.shortlisted === "yes") b[w].s++;
+    if(d.shortlisted==="yes")b[w].s++;
   });
-
-  const labs = Object.keys(b).sort((a, b) => new Date(a + ", 2025") - new Date(b + ", 2025"));
-  const ctx = document.getElementById("trendChart");
-
-  if (TC) { TC.destroy(); TC = null; }
-
-  if (!labs.length) {
-    ctx.style.display = "none";
-    document.getElementById("chart-legend").innerHTML =
-      '<span style="color:var(--text3);font-size:13px;">No data in this time range</span>';
+  const labs=Object.keys(b).sort((a,b)=>new Date(a+", 2025")-new Date(b+", 2025"));
+  const ctx=document.getElementById("trendChart");
+  if(TC){TC.destroy();TC=null;}
+  if(!labs.length){
+    ctx.style.display="none";
+    document.getElementById("chart-legend").innerHTML='<span style="color:var(--text3);font-size:13px;">No data in this time range</span>';
     return;
   }
-
-  ctx.style.display = "";
-  TC = new Chart(ctx, {
-    type: "bar",
-    data: { labels: labs, datasets: [
-      { label: "Auditions",   data: labs.map(l => b[l].t), backgroundColor: "#B5D4F4", borderRadius: 4 },
-      { label: "Shortlisted", data: labs.map(l => b[l].s), backgroundColor: "#378ADD", borderRadius: 4 }
-    ]},
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { autoSkip: false, maxRotation: 45, font: { size: 11 } }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: "rgba(128,128,128,0.1)" } }
-      }
-    }
-  });
-
-  const groupLabel = useWeekly ? "weekly" : "daily";
-  document.getElementById("chart-legend").innerHTML = `
+  ctx.style.display="";
+  TC=new Chart(ctx,{type:"bar",data:{labels:labs,datasets:[
+    {label:"Auditions", data:labs.map(l=>b[l].t),backgroundColor:"#B5D4F4",borderRadius:4},
+    {label:"Shortlisted",data:labs.map(l=>b[l].s),backgroundColor:"#378ADD",borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:11}},grid:{display:false}},
+            y:{beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:"rgba(128,128,128,0.1)"}}}}});
+  const groupLabel=useWeekly?"weekly":"daily";
+  document.getElementById("chart-legend").innerHTML=`
     <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Auditions</span>
     <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted</span>
     <span style="font-size:11px;color:var(--text3);margin-left:4px;">(${groupLabel})</span>`;
 }
 
-function dayLabel(s) {
-  const d = new Date(s + "T12:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+function dayLabel(s){const d=new Date(s+"T12:00:00");return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});}
+function wkLabel(s){const d=new Date(s+"T12:00:00"),st=new Date(d);st.setDate(d.getDate()-d.getDay());return st.toLocaleDateString("en-US",{month:"short",day:"numeric"});}
 
-function wkLabel(s) {
-  const d = new Date(s + "T12:00:00"), st = new Date(d);
-  st.setDate(d.getDate() - d.getDay());
-  return st.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
+// ── History ───────────────────────────────────────────────────
 function renderHistory() {
   const search=document.getElementById("search").value.toLowerCase();
   const fs=document.getElementById("fil-short").value;
@@ -1120,6 +1010,7 @@ function renderHistory() {
     </tr>`;}).join("");
 }
 
+// ── Pending ───────────────────────────────────────────────────
 function renderPending() {
   const pending=D.filter(d=>d.shortlisted==="pending"||d.booked==="pending").sort((a,b)=>new Date(b.date)-new Date(a.date));
   const el=document.getElementById("pend-list");
@@ -1156,33 +1047,19 @@ function renderPending() {
     </div>`).join("");
 }
 
-function sBadge(v,type) {
-  if(v==="yes")return type==="b"?"b-booked":"b-short";
-  if(v==="pending")return"b-pending";
-  return"b-no";
-}
+// ── Utilities ─────────────────────────────────────────────────
+function sBadge(v,type){if(v==="yes")return type==="b"?"b-booked":"b-short";if(v==="pending")return"b-pending";return"b-no";}
 
-function fmtDate(s) {
-  const d=new Date(s+"T12:00:00");
-  return d.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
-}
+function fmtDate(s){const d=new Date(s+"T12:00:00");return d.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});}
 
-function showSaveMsg(msg) {
-  const el=document.getElementById("save-msg");
-  el.textContent=msg; el.style.display="inline";
-  setTimeout(()=>el.style.display="none",2500);
-}
+function showSaveMsg(msg){const el=document.getElementById("save-msg");el.textContent=msg;el.style.display="inline";setTimeout(()=>el.style.display="none",2500);}
 
-function toast(msg) {
-  const el=document.getElementById("toast");
-  el.textContent=msg; el.style.display="block";
-  setTimeout(()=>el.style.display="none",2800);
-}
+function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.style.display="block";setTimeout(()=>el.style.display="none",2800);}
 
-function exportCSV() {
+function exportCSV(){
   if(!D.length){toast("No data to export.");return;}
-  const h=["Date","Title","Type","Usage","Platform","Budget Type","Budget","Bid","Bid Position","Shortlisted","Booked","Notes"];
-  const rows=D.map(d=>[d.date,d.title,d.type,d.usage,d.platform||"",d.btype||"",budgetDisplay(d),d.bid||"",bidPos(d)||"",d.shortlisted,d.booked,d.notes||""]);
+  const h=["Date","Title","Type","Usage","Platform","Budget Type","Budget","Bid","Bid Position","Listened","Shortlisted","Booked","Notes"];
+  const rows=D.map(d=>[d.date,d.title,d.type,d.usage,d.platform||"",d.btype||"",budgetDisplay(d),d.bid||"",bidPos(d)||"",d.listened||"",d.shortlisted,d.booked,d.notes||""]);
   const csv=[h,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="auditions.csv";a.click();
 }
