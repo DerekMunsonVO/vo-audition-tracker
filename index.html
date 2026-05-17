@@ -885,13 +885,6 @@ function renderHired() {
     .filter(d => d.booked === "yes")
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  renderHiredYearFilter();
-  if (HIRED_YEAR !== "all") {
-    hired = hired.filter(d =>
-      new Date(d.date + "T12:00:00").getFullYear() === HIRED_YEAR
-    );
-  }
-
   const tb = document.getElementById("hired-body");
   const totalsEl = document.getElementById("hired-totals");
 
@@ -995,41 +988,109 @@ function renderTypeCount(fd) {
     `;
   }).join("");
 
-  function renderHiredYearFilter() {
-    const years = [...new Set(
-      D.filter(d => d.booked === "yes")
-       .map(d => new Date(d.date + "T12:00:00").getFullYear())
-    )].sort((a, b) => b - a); // newest first
-  
-    const container = document.getElementById("hired-year-filter");
-    const currentYear = new Date().getFullYear();
-  
-    container.innerHTML = `<button class="time-btn ${HIRED_YEAR === "all" ? "active" : ""}" onclick="setHiredYear('all', this)">All time</button>`
-      + years.map(y => `<button class="time-btn ${HIRED_YEAR === y ? "active" : ""}" onclick="setHiredYear(${y}, this)">${y}</button>`).join("");
-  }
-  
-  function setHiredYear(year, el) {
-    HIRED_YEAR = year;
-    document.querySelectorAll("#hired-year-filter .time-btn").forEach(b => b.classList.remove("active"));
-    el.classList.add("active");
-    renderHired();
+  let D = [], W = 7, TC = null, EID = null, HIRED_YEAR = "all";
+
+function renderHiredYearFilter() {
+  const years = [...new Set(
+    D.filter(d => d.booked === "yes")
+     .map(d => new Date(d.date + "T12:00:00").getFullYear())
+  )].sort((a, b) => b - a);
+
+  const container = document.getElementById("hired-year-filter");
+  if (!container) return;
+
+  container.innerHTML =
+    `<button class="time-btn ${HIRED_YEAR === "all" ? "active" : ""}" onclick="setHiredYear('all', this)">All time</button>`
+    + years.map(y =>
+        `<button class="time-btn ${HIRED_YEAR === y ? "active" : ""}" onclick="setHiredYear(${y}, this)">${y}</button>`
+      ).join("");
+}
+
+function setHiredYear(year, el) {
+  HIRED_YEAR = year;
+  document.querySelectorAll("#hired-year-filter .time-btn").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+  renderHired();
+}
+
+function renderHired() {
+  renderHiredYearFilter();
+
+  let hired = [...D]
+    .filter(d => d.booked === "yes")
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  if (HIRED_YEAR !== "all") {
+    hired = hired.filter(d =>
+      new Date(d.date + "T12:00:00").getFullYear() === HIRED_YEAR
+    );
   }
 
-  // Legend
-  el.insertAdjacentHTML("beforeend", `
-    <div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-top:12px;">
-      <span style="display:flex;align-items:center;gap:4px;">
-        <span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>Booked
-      </span>
-      <span style="display:flex;align-items:center;gap:4px;">
-        <span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted
-      </span>
-      <span style="display:flex;align-items:center;gap:4px;">
-        <span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Not shortlisted
-      </span>
-    </div>
-  `);
-}
+  const tb = document.getElementById("hired-body");
+  const totalsEl = document.getElementById("hired-totals");
+
+  if (!hired.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">No hired jobs yet — they\'re coming!</td></tr>';
+    totalsEl.innerHTML = "";
+    return;
+  }
+
+  let totalGross = 0, totalNet = 0;
+
+  tb.innerHTML = hired.map(d => {
+    const gross = d.bid ? Number(d.bid) : null;
+    const isVoices = (d.platform || "").toLowerCase().includes("voices.com");
+    const net = gross && isVoices ? Math.round(gross * 0.80) : gross;
+    if (gross) totalGross += gross;
+    if (net)   totalNet   += net;
+    return `<tr>
+      <td>${fmtDate(d.date)}</td>
+      <td title="${d.title}">${d.title}</td>
+      <td>${d.type}</td>
+      <td>${d.platform || "—"}</td>
+      <td>${gross ? "$" + gross.toLocaleString() : "—"}</td>
+      <td style="color:var(--green);font-weight:500;">
+        ${net ? "$" + net.toLocaleString() : "—"}
+        ${isVoices && gross ? '<span style="font-size:11px;color:var(--text3);font-weight:400;"> (−20%)</span>' : ""}
+      </td>
+    </tr>`;
+  }).join("");
+
+  totalsEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px;">
+      <div class="metric">
+        <div class="metric-label">Jobs booked</div>
+        <div class="metric-value">${hired.length}</div>
+        ${HIRED_YEAR !== "all" ? `<div class="metric-sub">${HIRED_YEAR}</div>` : ""}
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total gross</div>
+        <div class="metric-value">$${totalGross.toLocaleString()}</div>
+        <div class="metric-sub">Before platform fees</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total net</div>
+        <div class="metric-value" style="color:var(--green);">$${totalNet.toLocaleString()}</div>
+        <div class="metric-sub">After Voices.com 20%</div>
+      </div>
+    </div>`;
+  }
+  
+    // Legend
+    el.insertAdjacentHTML("beforeend", `
+      <div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-top:12px;">
+        <span style="display:flex;align-items:center;gap:4px;">
+          <span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>Booked
+        </span>
+        <span style="display:flex;align-items:center;gap:4px;">
+          <span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted
+        </span>
+        <span style="display:flex;align-items:center;gap:4px;">
+          <span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Not shortlisted
+        </span>
+      </div>
+    `);
+  }
  
 function renderTrend(fd) {
   const b = {};
