@@ -194,6 +194,7 @@
     <button class="tab" onclick="showTab('log')">Log audition</button>
     <button class="tab" onclick="showTab('history')">History</button>
     <button class="tab" onclick="showTab('pending')">Pending <span class="tab-badge" id="pb"></span></button>
+    <button class="tab" onclick="showTab('hired')">Hired Jobs</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -394,6 +395,27 @@
     <div id="pend-list"></div>
   </div>
 
+  <!-- HIRED JOBS -->
+  <div id="tab-hired" style="display:none;">
+    <div class="card">
+      <div class="card-title">Hired jobs</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="width:130px;">Date</th>
+            <th style="width:180px;">Job title</th>
+            <th style="width:130px;">Type</th>
+            <th style="width:80px;">Platform</th>
+            <th style="width:90px;">Gross pay</th>
+            <th style="width:90px;">Net pay</th>
+          </tr></thead>
+          <tbody id="hired-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="hired-totals"></div>
+  </div>
+
 </div>
 
 <div id="toast"></div>
@@ -407,38 +429,69 @@ let D = [], W = 7, TC = null, EID = null;
 
 // ── Auth ─────────────────────────────────────────────────────
 function checkAuth() {
-  const saved = localStorage.getItem("tracker_auth");
-  if (saved === "true") return true;
+  return sessionStorage.getItem("tracker_auth") === "true";
+}
 
-  const input = prompt("Enter password to access Audition Tracker:");
-  if (input === APP_PASSWORD) {
-    localStorage.setItem("tracker_auth", "true");
-    return true;
-  }
-
+function showLoginScreen() {
   document.body.innerHTML = `
     <div style="
       display:flex; align-items:center; justify-content:center;
       height:100vh; font-family:-apple-system,sans-serif;
       background:#eeedea; color:#1a1a18;
     ">
-      <div style="text-align:center;">
-        <div style="font-size:32px;margin-bottom:12px;">🔒</div>
-        <div style="font-size:18px;font-weight:500;margin-bottom:8px;">Access denied</div>
-        <div style="font-size:14px;color:#5f5e5a;margin-bottom:20px;">Incorrect password.</div>
-        <button onclick="location.reload()" style="
-          font-family:inherit; font-size:14px; padding:8px 16px;
-          border-radius:8px; cursor:pointer; border:0.5px solid rgba(0,0,0,0.22);
-          background:#1a1a18; color:#fff;
-        ">Try again</button>
+      <div style="
+        background:#fff; border:0.5px solid rgba(0,0,0,0.12);
+        border-radius:16px; padding:32px 28px; width:100%;
+        max-width:340px; text-align:center;
+        box-shadow:0 4px 24px rgba(0,0,0,0.08);
+      ">
+        <div style="font-size:32px;margin-bottom:12px;">🎙️</div>
+        <div style="font-size:18px;font-weight:500;margin-bottom:4px;">Audition Tracker</div>
+        <div style="font-size:13px;color:#5f5e5a;margin-bottom:24px;">Derek Munson VO</div>
+        <input
+          type="password"
+          id="pw-input"
+          placeholder="Password"
+          onkeydown="if(event.key==='Enter')tryLogin()"
+          style="
+            font-family:-apple-system,sans-serif; font-size:15px;
+            width:100%; padding:10px 12px; margin-bottom:10px;
+            border:0.5px solid rgba(0,0,0,0.22); border-radius:8px;
+            background:#f5f5f3; color:#1a1a18; text-align:center;
+            outline:none;
+          "
+          autofocus
+        >
+        <div id="pw-error" style="
+          font-size:12px;color:#A32D2D;margin-bottom:10px;
+          min-height:18px;
+        "></div>
+        <button onclick="tryLogin()" style="
+          font-family:-apple-system,sans-serif; font-size:14px;
+          width:100%; padding:10px 16px; border-radius:8px;
+          cursor:pointer; border:none;
+          background:#1a1a18; color:#fff; font-weight:500;
+        ">Unlock</button>
       </div>
     </div>`;
-  return false;
+}
+
+function tryLogin() {
+  const input = document.getElementById("pw-input").value;
+  if (input === APP_PASSWORD) {
+    sessionStorage.setItem("tracker_auth", "true");
+    location.reload();
+  } else {
+    const err = document.getElementById("pw-error");
+    err.textContent = "Incorrect password — try again.";
+    document.getElementById("pw-input").value = "";
+    document.getElementById("pw-input").focus();
+  }
 }
 
 // ── Init ─────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
-  if (!checkAuth()) return;
+  if (!checkAuth()) { showLoginScreen(); return; }
   setToday();
   loadData();
   renderDashboard();
@@ -515,13 +568,14 @@ async function quickUpdate(id, field, val) {
 
 // ── Tabs ─────────────────────────────────────────────────────
 function showTab(n) {
-  ["dashboard","log","history","pending"].forEach((t,i) => {
+  ["dashboard","log","history","pending","hired"].forEach((t,i) => {
     document.getElementById("tab-"+t).style.display = t===n ? "" : "none";
     document.querySelectorAll(".tab")[i].classList.toggle("active", t===n);
   });
-  if (n==="history")  renderHistory();
+  if (n==="history")   renderHistory();
   if (n==="dashboard") renderDashboard();
-  if (n==="pending")  renderPending();
+  if (n==="pending")   renderPending();
+  if (n==="hired")     renderHired();
 }
 
 function setWin(d, el) {
@@ -809,6 +863,64 @@ function bidBars(id,fd,outcome) {
   el.innerHTML=rows.map(([k,v])=>{const r=pct(v.h,v.t);return`<div class="bar-wrap"><div class="bar-label"><span>${labs[k]}</span><span style="font-weight:500">${r}% <span style="font-weight:400;color:var(--text3)">(${v.h}/${v.t})</span></span></div><div class="bar-bg"><div class="bar-fill" style="width:${r}%;background:${cols[k]};"></div></div></div>`;}).join("");
 }
 
+function renderHired() {
+  const hired = [...D]
+    .filter(d => d.booked === "yes")
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const tb = document.getElementById("hired-body");
+  const totalsEl = document.getElementById("hired-totals");
+
+  if (!hired.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">No hired jobs yet — they\'re coming!</td></tr>';
+    totalsEl.innerHTML = "";
+    return;
+  }
+
+  let totalGross = 0;
+  let totalNet = 0;
+
+  tb.innerHTML = hired.map(d => {
+    const gross = d.bid ? Number(d.bid) : null;
+    const isVoicesCom = (d.platform || "").toLowerCase().includes("voices.com");
+    const net = gross && isVoicesCom ? Math.round(gross * 0.80) : gross;
+
+    if (gross) totalGross += gross;
+    if (net)   totalNet   += net;
+
+    return `<tr>
+      <td>${fmtDate(d.date)}</td>
+      <td title="${d.title}">${d.title}</td>
+      <td>${d.type}</td>
+      <td>${d.platform || "—"}</td>
+      <td>${gross ? "$" + gross.toLocaleString() : "—"}</td>
+      <td style="color:var(--green);font-weight:500;">
+        ${net ? "$" + net.toLocaleString() : "—"}
+        ${isVoicesCom && gross ? '<span style="font-size:11px;color:var(--text3);font-weight:400;"> (−20%)</span>' : ""}
+      </td>
+    </tr>`;
+  }).join("");
+
+  totalsEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px;">
+      <div class="metric">
+        <div class="metric-label">Jobs booked</div>
+        <div class="metric-value">${hired.length}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total gross</div>
+        <div class="metric-value">$${totalGross.toLocaleString()}</div>
+        <div class="metric-sub">Before platform fees</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total net</div>
+        <div class="metric-value" style="color:var(--green);">$${totalNet.toLocaleString()}</div>
+        <div class="metric-sub">After Voices.com 20%</div>
+      </div>
+    </div>
+  `;
+}
+ 
 function renderTypeCount(fd) {
   const g = {};
   fd.forEach(d => {
