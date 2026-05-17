@@ -730,7 +730,16 @@ function filtered() {
   return D.filter(d=>new Date(d.date)>=c);
 }
 function pct(n,d) { return d===0?0:Math.round((n/d)*100); }
-function renderAll() { renderDashboard(); updateBadge(); renderHiredYearFilter(); }
+
+function renderAll() {
+  renderDashboard();
+  updateBadge();
+  renderHiredYearFilter();
+  // If hired tab is currently open, refresh it too
+  if (document.getElementById("tab-hired").style.display !== "none") {
+    renderHired();
+  }
+}
 
 function updateBadge() {
   const n=D.filter(d=>d.shortlisted==="pending"||d.booked==="pending").length;
@@ -892,42 +901,61 @@ function setHiredYear(year,el) {
 
 function renderHired() {
   renderHiredYearFilter();
-  let hired=[...D].filter(d=>d.booked==="yes").sort((a,b)=>new Date(b.date)-new Date(a.date));
-  if(HIRED_YEAR!=="all"){
-    hired=hired.filter(d=>new Date(d.date+"T12:00:00").getFullYear()===HIRED_YEAR);
+
+  let hired = [...D].filter(d => d.booked === "yes")
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  if (HIRED_YEAR !== "all") {
+    hired = hired.filter(d =>
+      new Date(d.date + "T12:00:00").getFullYear() === HIRED_YEAR
+    );
   }
-  const tb=document.getElementById("hired-body");
-  const totalsEl=document.getElementById("hired-totals");
-  if(!hired.length){
-    tb.innerHTML='<tr><td colspan="6" class="empty">No hired jobs yet — they\'re coming!</td></tr>';
-    totalsEl.innerHTML="";
+
+  const tb = document.getElementById("hired-body");
+  const totalsEl = document.getElementById("hired-totals");
+
+  // If D is still empty, data hasn't loaded yet
+  if (D.length === 0) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+    totalsEl.innerHTML = "";
     return;
   }
-  let totalGross=0,totalNet=0;
-  tb.innerHTML=hired.map(d=>{
-    const gross=d.bid?Number(d.bid):null;
-    const isVoices=(d.platform||"").toLowerCase().includes("voices.com");
-    const net=gross&&isVoices?Math.round(gross*0.80):gross;
-    if(gross)totalGross+=gross;
-    if(net)totalNet+=net;
-    return`<tr>
+
+  if (!hired.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">No hired jobs' +
+      (HIRED_YEAR !== "all" ? ' for ' + HIRED_YEAR : ' yet — they\'re coming!') +
+      '</td></tr>';
+    totalsEl.innerHTML = "";
+    return;
+  }
+
+  let totalGross = 0, totalNet = 0;
+
+  tb.innerHTML = hired.map(d => {
+    const gross = d.bid ? Number(d.bid) : null;
+    const isVoices = (d.platform || "").toLowerCase().includes("voices.com");
+    const net = gross && isVoices ? Math.round(gross * 0.80) : gross;
+    if (gross) totalGross += gross;
+    if (net)   totalNet   += net;
+    return `<tr>
       <td>${fmtDate(d.date)}</td>
       <td title="${d.title}">${d.title}</td>
       <td>${d.type}</td>
-      <td>${d.platform||"—"}</td>
-      <td>${gross?"$"+gross.toLocaleString():"—"}</td>
+      <td>${d.platform || "—"}</td>
+      <td>${gross ? "$" + gross.toLocaleString() : "—"}</td>
       <td style="color:var(--green);font-weight:500;">
-        ${net?"$"+net.toLocaleString():"—"}
-        ${isVoices&&gross?'<span style="font-size:11px;color:var(--text3);font-weight:400;"> (−20%)</span>':""}
+        ${net ? "$" + net.toLocaleString() : "—"}
+        ${isVoices && gross ? '<span style="font-size:11px;color:var(--text3);font-weight:400;"> (−20%)</span>' : ""}
       </td>
     </tr>`;
   }).join("");
-  totalsEl.innerHTML=`
+
+  totalsEl.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px;">
       <div class="metric">
         <div class="metric-label">Jobs booked</div>
         <div class="metric-value">${hired.length}</div>
-        ${HIRED_YEAR!=="all"?`<div class="metric-sub">${HIRED_YEAR}</div>`:""}
+        ${HIRED_YEAR !== "all" ? `<div class="metric-sub">${HIRED_YEAR}</div>` : ""}
       </div>
       <div class="metric">
         <div class="metric-label">Total gross</div>
