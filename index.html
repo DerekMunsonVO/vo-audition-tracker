@@ -811,22 +811,53 @@ function renderTypeCount(fd) {
 
   const max = rows[0][1].total;
 
-  el.innerHTML = rows.map(([k, v]) => `
-    <div class="bar-wrap">
-      <div class="bar-label">
-        <span>${k}</span>
-        <span style="font-weight:500">${v.total}
-          <span style="font-weight:400;color:var(--text3);">
-            · ${v.short} shortlisted
-            · ${v.booked} booked
+  el.innerHTML = rows.map(([k, v]) => {
+    const totalPct   = Math.round((v.total / max) * 100);
+    const shortPct   = Math.round((v.short / v.total) * 100);
+    const bookedPct  = Math.round((v.booked / v.total) * 100);
+    const neitherPct = 100 - shortPct - bookedPct;
+
+    return `
+      <div class="bar-wrap">
+        <div class="bar-label">
+          <span>${k}</span>
+          <span style="font-weight:500">${v.total}
+            <span style="font-weight:400;color:var(--text3);">
+              · ${v.short} shortlisted · ${v.booked} booked
+            </span>
           </span>
-        </span>
+        </div>
+        <div class="bar-bg">
+          <div style="
+            width:${totalPct}%;
+            height:100%;
+            border-radius:4px;
+            overflow:hidden;
+            display:flex;
+          ">
+            <div style="width:${bookedPct}%;  background:#1D9E75;"></div>
+            <div style="width:${shortPct}%;   background:#378ADD;"></div>
+            <div style="width:${neitherPct}%; background:#B5D4F4;"></div>
+          </div>
+        </div>
       </div>
-      <div class="bar-bg">
-        <div class="bar-fill" style="width:${Math.round((v.total/max)*100)}%;background:#378ADD;"></div>
-      </div>
+    `;
+  }).join("");
+
+  // Legend
+  el.insertAdjacentHTML("beforeend", `
+    <div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-top:12px;">
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>Booked
+      </span>
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted
+      </span>
+      <span style="display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Not shortlisted
+      </span>
     </div>
-  `).join("");
+  `);
 }
  
 function renderTrend(fd) {
