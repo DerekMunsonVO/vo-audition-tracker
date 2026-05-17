@@ -411,6 +411,9 @@
 
   <!-- HIRED JOBS -->
   <div id="tab-hired" style="display:none;">
+    <div class="time-filter" id="hired-year-filter">
+      <button class="time-btn active" onclick="setHiredYear('all', this)">All time</button>
+    </div>
     <div class="card">
       <div class="card-title">Hired jobs</div>
       <div class="table-wrap">
@@ -439,7 +442,7 @@
 // ── Config ───────────────────────────────────────────────────
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZnP8JGd9czMoyY43_x9wl_8REX5qpS5asW7em2w1uSBmajpOsxO2afabJgpuRTIVh/exec";
 const APP_PASSWORD = "MunsonVO2026";
-let D = [], W = 7, TC = null, EID = null;
+let D = [], W = 7, TC = null, EID = null; HIRED_YEAR = "all";
 
 // ── Auth ─────────────────────────────────────────────────────
 function checkAuth() {
@@ -882,6 +885,13 @@ function renderHired() {
     .filter(d => d.booked === "yes")
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  renderHiredYearFilter();
+  if (HIRED_YEAR !== "all") {
+    hired = hired.filter(d =>
+      new Date(d.date + "T12:00:00").getFullYear() === HIRED_YEAR
+    );
+  }
+
   const tb = document.getElementById("hired-body");
   const totalsEl = document.getElementById("hired-totals");
 
@@ -984,6 +994,26 @@ function renderTypeCount(fd) {
       </div>
     `;
   }).join("");
+
+  function renderHiredYearFilter() {
+    const years = [...new Set(
+      D.filter(d => d.booked === "yes")
+       .map(d => new Date(d.date + "T12:00:00").getFullYear())
+    )].sort((a, b) => b - a); // newest first
+  
+    const container = document.getElementById("hired-year-filter");
+    const currentYear = new Date().getFullYear();
+  
+    container.innerHTML = `<button class="time-btn ${HIRED_YEAR === "all" ? "active" : ""}" onclick="setHiredYear('all', this)">All time</button>`
+      + years.map(y => `<button class="time-btn ${HIRED_YEAR === y ? "active" : ""}" onclick="setHiredYear(${y}, this)">${y}</button>`).join("");
+  }
+  
+  function setHiredYear(year, el) {
+    HIRED_YEAR = year;
+    document.querySelectorAll("#hired-year-filter .time-btn").forEach(b => b.classList.remove("active"));
+    el.classList.add("active");
+    renderHired();
+  }
 
   // Legend
   el.insertAdjacentHTML("beforeend", `
