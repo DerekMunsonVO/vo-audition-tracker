@@ -988,8 +988,6 @@ function renderTypeCount(fd) {
     `;
   }).join("");
 
-  let D = [], W = 7, TC = null, EID = null, HIRED_YEAR = "all";
-
 function renderHiredYearFilter() {
   const years = [...new Set(
     D.filter(d => d.booked === "yes")
