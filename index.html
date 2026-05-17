@@ -166,7 +166,7 @@
   <div class="app-header">
     <div>
       <h1>Audition Tracker</h1>
-      <div class="subtitle">Voices.com · Voice123 · Direct</div>
+      <div class="subtitle">Voices.com · CastVoices · Direct</div>
     </div>
     <div class="status-wrap">
       <span id="status-dot"></span>
@@ -200,11 +200,11 @@
       <button class="time-btn" onclick="setWin(365,this)">1 year</button>
       <button class="time-btn" onclick="setWin(99999,this)">All time</button>
     </div>
-   <div class="card" id="shortlist-card">
+    <div class="metric-grid" id="metrics"></div>
+    <div class="card" id="shortlist-card">
       <div class="card-title">Current Shortlists</div>
       <div id="shortlist-summary"></div>
     </div>
-    <div class="metric-grid" id="metrics"></div>
     <div class="grid-2">
       <div class="card"><div class="card-title">Shortlist rate by project type</div><div id="b-type"></div></div>
       <div class="card"><div class="card-title">Shortlist rate by usage</div><div id="b-usage"></div></div>
@@ -212,6 +212,10 @@
     <div class="grid-2">
       <div class="card"><div class="card-title">Shortlist rate by bid position</div><div id="b-bidshort"></div></div>
       <div class="card"><div class="card-title">Booking rate by bid position</div><div id="b-bidbook"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Auditions by project type</div>
+      <div id="b-type-count"></div>
     </div>
     <div class="card">
       <div class="card-title">Auditions over time (weekly)</div>
@@ -689,6 +693,7 @@ function renderDashboard() {
   groupBars("b-usage", fd,"usage","shortlisted","#378ADD");
   bidBars("b-bidshort",fd,"shortlisted");
   bidBars("b-bidbook", fd,"booked");
+  renderTypeCount(fd);
   renderTrend(fd);
 }
 
@@ -789,6 +794,41 @@ function bidBars(id,fd,outcome) {
   el.innerHTML=rows.map(([k,v])=>{const r=pct(v.h,v.t);return`<div class="bar-wrap"><div class="bar-label"><span>${labs[k]}</span><span style="font-weight:500">${r}% <span style="font-weight:400;color:var(--text3)">(${v.h}/${v.t})</span></span></div><div class="bar-bg"><div class="bar-fill" style="width:${r}%;background:${cols[k]};"></div></div></div>`;}).join("");
 }
 
+function renderTypeCount(fd) {
+  const g = {};
+  fd.forEach(d => {
+    const k = d.type || "Unknown";
+    if (!g[k]) g[k] = { total: 0, short: 0, booked: 0 };
+    g[k].total++;
+    if (d.shortlisted === "yes") g[k].short++;
+    if (d.booked === "yes") g[k].booked++;
+  });
+
+  const el = document.getElementById("b-type-count");
+  const rows = Object.entries(g).sort((a, b) => b[1].total - a[1].total);
+
+  if (!rows.length) { el.innerHTML = '<div class="empty">No data yet</div>'; return; }
+
+  const max = rows[0][1].total;
+
+  el.innerHTML = rows.map(([k, v]) => `
+    <div class="bar-wrap">
+      <div class="bar-label">
+        <span>${k}</span>
+        <span style="font-weight:500">${v.total}
+          <span style="font-weight:400;color:var(--text3);">
+            · ${v.short} shortlisted
+            · ${v.booked} booked
+          </span>
+        </span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:${Math.round((v.total/max)*100)}%;background:#378ADD;"></div>
+      </div>
+    </div>
+  `).join("");
+}
+ 
 function renderTrend(fd) {
   const b = {};
   const useWeekly = W > 30;
