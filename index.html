@@ -215,7 +215,7 @@
     </div>
     <div class="metric-grid" id="metrics"></div>
     <div class="card" id="shortlist-card">
-      <div class="card-title">Current Shortlists</div>
+      <div class="card-title">Current Shortlists <span id="shortlist-count"></span></div>
       <div id="shortlist-summary"></div>
     </div>
     <div class="grid-2">
@@ -754,7 +754,7 @@ function renderDashboard() {
   const listenedShortlisted=fd.filter(d=>d.listened==="yes"&&d.shortlisted==="yes").length;
   const sl=fd.filter(d=>d.shortlisted==="yes").length;
   const bk=fd.filter(d=>d.booked==="yes").length;
-  document.getElementById("metrics").innerHTML=`
+    document.getElementById("metrics").innerHTML=`
     <div class="metric">
       <div class="metric-label">Auditions</div>
       <div class="metric-value">${tot}</div>
@@ -762,17 +762,17 @@ function renderDashboard() {
     <div class="metric">
       <div class="metric-label">Listen rate</div>
       <div class="metric-value">${pct(listened,tot)}%</div>
-      <div class="metric-sub">${listened} listened</div>
+      <div class="metric-sub">${listened}:${tot} ratio</div>
     </div>
     <div class="metric">
       <div class="metric-label">Shortlist rate</div>
       <div class="metric-value">${pct(sl,tot)}%</div>
-      <div class="metric-sub">${sl} shortlisted</div>
+      <div class="metric-sub">${sl}:${tot} ratio</div>
     </div>
     <div class="metric">
       <div class="metric-label">Listen → Shortlist</div>
       <div class="metric-value">${pct(listenedShortlisted,listened)}%</div>
-      <div class="metric-sub">${listenedShortlisted} converted</div>
+      <div class="metric-sub">${listenedShortlisted}:${listened} ratio</div>
     </div>`;
   renderCurrentShortlists(fd);
   groupBars("b-type",  fd,"type","shortlisted","#378ADD");
@@ -786,6 +786,7 @@ function renderDashboard() {
 function renderCurrentShortlists(fd) {
   const shortlisted=fd.filter(d=>d.shortlisted==="yes"&&d.booked==="pending");
   const el=document.getElementById("shortlist-summary");
+  const countEl = document.getElementById("shortlist-count");
   if (!shortlisted.length) { el.innerHTML='<div class="empty">No active shortlists right now</div>'; return; }
   const total=shortlisted.reduce((sum,d)=>sum+Number(d.bid||0),0);
   const bookedFromShortlist=fd.filter(d=>d.shortlisted==="yes"&&d.booked==="yes").length;
