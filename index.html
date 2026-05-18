@@ -784,7 +784,7 @@ function renderDashboard() {
 }
 
 function renderCurrentShortlists(fd) {
-  const shortlisted=fd.filter(d=>d.shortlisted==="yes"&&d.booked!=="yes");
+  const shortlisted=fd.filter(d=>d.shortlisted==="yes"&&d.booked==="pending");
   const el=document.getElementById("shortlist-summary");
   if (!shortlisted.length) { el.innerHTML='<div class="empty">No active shortlists right now</div>'; return; }
   const total=shortlisted.reduce((sum,d)=>sum+Number(d.bid||0),0);
