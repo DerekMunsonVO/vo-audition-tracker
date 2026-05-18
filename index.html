@@ -763,7 +763,7 @@ function renderDashboard() {
       <div class="metric-label">Listen rate</div>
       <div style="display:flex;align-items:baseline;gap:8px;">
         <div class="metric-value">${pct(listened,tot)}%</div>
-        <div style="font-size:12px;color:var(--text3);">1:${listened > 0 ? Math.round(tot/listened) : "—"}</div>
+        <div style="font-size:12px;color:var(--text3);">(1:${listened > 0 ? Math.round(tot/listened) : "—"})</div>
       </div>
       <div class="metric-sub">${listened} listened</div>
     </div>
@@ -771,7 +771,7 @@ function renderDashboard() {
       <div class="metric-label">Shortlist rate</div>
       <div style="display:flex;align-items:baseline;gap:8px;">
         <div class="metric-value">${pct(sl,tot)}%</div>
-        <div style="font-size:12px;color:var(--text3);">1:${sl > 0 ? Math.round(tot/sl) : "—"}</div>
+        <div style="font-size:12px;color:var(--text3);">(1:${sl > 0 ? Math.round(tot/sl) : "—"})</div>
       </div>
       <div class="metric-sub">${sl} shortlisted</div>
     </div>
@@ -779,7 +779,7 @@ function renderDashboard() {
       <div class="metric-label">Listen → Shortlist</div>
       <div style="display:flex;align-items:baseline;gap:8px;">
         <div class="metric-value">${pct(listenedShortlisted,listened)}%</div>
-        <div style="font-size:12px;color:var(--text3);">1:${listenedShortlisted > 0 ? Math.round(listened/listenedShortlisted) : "—"}</div>
+        <div style="font-size:12px;color:var(--text3);">(1:${listenedShortlisted > 0 ? Math.round(listened/listenedShortlisted) : "—"})</div>
       </div>
       <div class="metric-sub">${listenedShortlisted} converted</div>
     </div>`;
