@@ -798,8 +798,8 @@ function renderCurrentShortlists(fd) {
   const countEl = document.getElementById("shortlist-count");
   if (!shortlisted.length) { el.innerHTML='<div class="empty">No active shortlists right now</div>'; return; }
   const total=shortlisted.reduce((sum,d)=>sum+Number(d.bid||0),0);
-  const bookedFromShortlist=fd.filter(d=>d.shortlisted==="yes"&&d.booked==="yes").length;
-  const totalHistoricalShortlists=fd.filter(d=>d.shortlisted==="yes").length;
+  const bookedFromShortlist = D.filter(d => d.shortlisted === "yes" && d.booked === "yes").length;
+  const totalHistoricalShortlists = D.filter(d => d.shortlisted === "yes" && d.booked !== "pending").length;
   const closeRate=totalHistoricalShortlists?Math.round((bookedFromShortlist/totalHistoricalShortlists)*100):0;
   const expectedValue=Math.round(total*(closeRate/100));
   const jobRows=shortlisted.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>`
