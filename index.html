@@ -798,10 +798,10 @@ function renderCurrentShortlists(fd) {
   const countEl = document.getElementById("shortlist-count");
   if (!shortlisted.length) { el.innerHTML='<div class="empty">No active shortlists right now</div>'; return; }
   const total=shortlisted.reduce((sum,d)=>sum+Number(d.bid||0),0);
-  const bookedFromShortlist = D.filter(d => d.shortlisted === "yes" && d.booked === "yes").length;
+  /* const bookedFromShortlist = D.filter(d => d.shortlisted === "yes" && d.booked === "yes").length;
   const totalHistoricalShortlists = D.filter(d => d.shortlisted === "yes" && d.booked !== "pending").length;
   const closeRate=totalHistoricalShortlists?Math.round((bookedFromShortlist/totalHistoricalShortlists)*100):0;
-  const expectedValue=Math.round(total*(closeRate/100));
+  const expectedValue=Math.round(total*(closeRate/100)); */
   const jobRows=shortlisted.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
       <div>
@@ -819,11 +819,11 @@ function renderCurrentShortlists(fd) {
         <div style="font-size:12px;color:var(--text2);">Potential earnings</div>
         <div style="font-size:20px;font-weight:500;">$${total.toLocaleString()}</div>
       </div>
-      <div style="padding:10px 12px;background:var(--blue-bg);border-radius:var(--radius);flex:1;min-width:160px;">
+      /* <div style="padding:10px 12px;background:var(--blue-bg);border-radius:var(--radius);flex:1;min-width:160px;">
         <div style="font-size:12px;color:var(--blue-text);">Historical close rate</div>
         <div style="font-size:18px;font-weight:500;color:var(--blue-text);">${closeRate}%</div>
         <div style="font-size:12px;color:var(--blue-text);margin-top:2px;">Expected value: $${expectedValue.toLocaleString()}</div>
-      </div>
+      </div> */
     </div>`;
 }
 
