@@ -819,14 +819,16 @@ function renderCurrentShortlists(fd) {
         <div style="font-size:12px;color:var(--text2);">Potential earnings</div>
         <div style="font-size:20px;font-weight:500;">$${total.toLocaleString()}</div>
       </div>
-      /* <div style="padding:10px 12px;background:var(--blue-bg);border-radius:var(--radius);flex:1;min-width:160px;">
-        <div style="font-size:12px;color:var(--blue-text);">Historical close rate</div>
-        <div style="font-size:18px;font-weight:500;color:var(--blue-text);">${closeRate}%</div>
-        <div style="font-size:12px;color:var(--blue-text);margin-top:2px;">Expected value: $${expectedValue.toLocaleString()}</div>
-      </div> */
     </div>`;
 }
 
+// CLOSE RATE BOX — uncomment to restore and place at line 822
+// <div style="padding:10px 12px;background:var(--blue-bg);border-radius:var(--radius);flex:1;min-width:160px;">
+//   <div style="font-size:12px;color:var(--blue-text);">Historical close rate</div>
+//   <div style="font-size:18px;font-weight:500;color:var(--blue-text);">${closeRate}%</div>
+//   <div style="font-size:12px;color:var(--blue-text);margin-top:2px;">Expected value: $${expectedValue.toLocaleString()}</div>
+// </div>
+ 
 function groupBars(id,fd,field,outcome,color) {
   const g={};
   fd.forEach(d=>{const k=d[field]||"Unknown";if(!g[k])g[k]={t:0,h:0};g[k].t++;if(d[outcome]==="yes")g[k].h++;});
