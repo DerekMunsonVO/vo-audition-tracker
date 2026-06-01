@@ -127,8 +127,10 @@
 
   .btn { font-family: var(--font); font-size: 14px; padding: 8px 16px; border-radius: var(--radius); cursor: pointer; border: 0.5px solid var(--border2); background: transparent; color: var(--text); }
   .btn:hover { background: var(--bg2); }
-  .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-primary { background: #066C81; color: #fff; border-color: none; }
   .btn-primary:hover { opacity: .85; }
+  .btn-clear { background: #333; color: #fff; border-color: none; }
+  .btn-clear:hover { opacity: .85; }
   .btn-sm { font-size: 12px; padding: 4px 10px; }
   .btn-danger { border-color: var(--red); color: var(--red-text); }
   .btn-danger:hover { background: var(--red-bg); }
@@ -365,7 +367,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <button class="btn btn-primary" id="save-btn" onclick="saveAudition()">Save audition</button>
-        <button class="btn" onclick="cancelEdit()">Clear</button>
+        <button class="btn btn-clear" onclick="cancelEdit()">Clear</button>
         <span id="save-msg" style="font-size:13px;color:#3B6D11;display:none;"></span>
       </div>
     </div>
