@@ -1036,7 +1036,7 @@ function renderHistory() {
   if(!rows.length){tb.innerHTML='<tr><td colspan="9" class="empty">No entries found</td></tr>';return;}
   tb.innerHTML=rows.map(d=>{
     const pos=bidPos(d);
-    return`<tr>
+    return`<tr style="${d.booked==='no'?'opacity:0.4;':''}">>
       <td>${fmtDate(d.date)}</td>
       <td title="${d.title}">${d.title}</td>
       <td>${d.type}</td>
