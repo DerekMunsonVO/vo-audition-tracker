@@ -63,7 +63,7 @@
   }
   body { font-family: var(--font); background: var(--bg3); color: var(--text); font-size: 15px; line-height: 1.5; min-height: 100vh; }
 
-  .shell { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+  .shell { max-width: 100%; margin: 0 auto; padding: 24px 24px 60px; }
   .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
   .app-header h1 { font-size: 20px; font-weight: 500; }
   .app-header .subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
@@ -395,7 +395,7 @@
             <th style="width:120px;">Type</th>
             <th style="width:90px;">Budget</th>
             <th style="width:58px;">Bid</th>
-            <th style="width:60px;">Position</th>
+            <th style="width:72px;">Listened</th>
             <th style="width:78px;">Shortlisted</th>
             <th style="width:65px;">Booked</th>
             <th style="width:68px;"></th>
@@ -1042,7 +1042,7 @@ function renderHistory() {
       <td>${d.type}</td>
       <td>${budgetDisplay(d)}</td>
       <td>${d.bid?"$"+Number(d.bid).toLocaleString():"—"}</td>
-      <td>${pos?`<span class="badge b-${pos}">${pos}</span>`:"—"}</td>
+      <td><span class="badge ${sBadge(d.listened,"l")}">${d.listened||"—"}</span></td>
       <td><span class="badge ${sBadge(d.shortlisted,"s")}">${d.shortlisted}</span></td>
       <td><span class="badge ${sBadge(d.booked,"b")}">${d.booked}</span></td>
       <td><div style="display:flex;gap:4px;">
@@ -1090,7 +1090,16 @@ function renderPending() {
 }
 
 // ── Utilities ─────────────────────────────────────────────────
-function sBadge(v,type){if(v==="yes")return type==="b"?"b-booked":"b-short";if(v==="pending")return"b-pending";return"b-no";}
+function sBadge(v, type) {
+  if (type === "l") {
+    if (v === "yes") return "b-short";
+    if (v === "no")  return "b-no";
+    return "b-pending";
+  }
+  if (v==="yes") return type==="b"?"b-booked":"b-short";
+  if (v==="pending") return"b-pending";
+  return"b-no";
+}
 
 function fmtDate(s){const d=new Date(s+"T12:00:00");return d.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});}
 
