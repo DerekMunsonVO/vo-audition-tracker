@@ -87,7 +87,7 @@
   .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 16px; }
   .card-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 14px; }
 
-  .metric-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+  .metric-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 16px; }
   .metric { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
   .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
   .metric-value { font-size: 22px; font-weight: 500; }
@@ -143,6 +143,7 @@
   .b-below   { background: var(--green-bg); color: var(--green-text); }
   .b-at      { background: var(--blue-bg);  color: var(--blue-text); }
   .b-above   { background: var(--amber-bg); color: var(--amber-text); }
+  .b-cancelled { background: #F0E8F5; color: #7B3FA0; }
 
   .hist-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
   .hist-filters  { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -325,7 +326,8 @@
           <select id="f-booked">
             <option value="pending">Pending</option>
             <option value="yes">Yes</option>
-           <option value="no">No</option>
+            <option value="no">No</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
         <div class="form-group"><label>Notes (optional)</label>
@@ -754,6 +756,7 @@ function renderDashboard() {
   const fd=filtered(), tot=fd.length;
   const listened=fd.filter(d=>d.listened==="yes").length;
   const listenedShortlisted=fd.filter(d=>d.listened==="yes"&&d.shortlisted==="yes").length;
+  const cancelled = fd.filter(d => d.booked === "cancelled").length;
   const sl=fd.filter(d=>d.shortlisted==="yes").length;
   const bk=fd.filter(d=>d.booked==="yes").length;
   document.getElementById("metrics").innerHTML=`
@@ -784,6 +787,14 @@ function renderDashboard() {
         <div style="font-size:12px;color:var(--text3);">(1:${listenedShortlisted > 0 ? Math.round(listened/listenedShortlisted) : "—"})</div>
       </div>
       <div class="metric-sub">${listenedShortlisted} converted</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Cancellation rate</div>
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <div class="metric-value">${pct(cancelled,tot)}%</div>
+        <div style="font-size:12px;color:var(--text3);">(1:${cancelled > 0 ? Math.round(tot/cancelled) : "—"})</div>
+      </div>
+      <div class="metric-sub">${cancelled} cancelled</div>
     </div>`;
   renderCurrentShortlists(D);
   groupBars("b-type",  fd,"type","shortlisted","#378ADD");
@@ -1036,7 +1047,7 @@ function renderHistory() {
   if(!rows.length){tb.innerHTML='<tr><td colspan="9" class="empty">No entries found</td></tr>';return;}
   tb.innerHTML=rows.map(d=>{
     const pos=bidPos(d);
-    return`<tr style="${d.booked==='no'?'opacity:0.4;':''}">
+    return`<tr style="${d.booked==='no'||d.booked==='cancelled'?'opacity:0.4;':''}">
       <td>${fmtDate(d.date)}</td>
       <td title="${d.title}">${d.title}</td>
       <td>${d.type}</td>
@@ -1096,9 +1107,10 @@ function sBadge(v, type) {
     if (v === "no")  return "b-no";
     return "b-pending";
   }
-  if (v==="yes") return type==="b"?"b-booked":"b-short";
-  if (v==="pending") return"b-pending";
-  return"b-no";
+  if (v === "yes")       return type === "b" ? "b-booked" : "b-short";
+  if (v === "pending")   return "b-pending";
+  if (v === "cancelled") return "b-cancelled";
+  return "b-no";
 }
 
 function fmtDate(s){const d=new Date(s+"T12:00:00");return d.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});}
