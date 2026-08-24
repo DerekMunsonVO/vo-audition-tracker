@@ -526,30 +526,38 @@ function setStatus(state, msg) {
 }
 
 // ── API ──────────────────────────────────────────────────────
-async function api(method, body) {
+async function api(method, body, retries = 3) {
   if (!SCRIPT_URL) { toast("No script URL configured."); return null; }
   setStatus("loading");
-  try {
-    let res;
-    if (method === "GET") {
-      res = await fetch(SCRIPT_URL + "?action=getAll", { redirect: "follow" });
-    } else {
-      res = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify(body),
-        redirect: "follow"
-      });
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      let res;
+      if (method === "GET") {
+        res = await fetch(SCRIPT_URL + "?action=getAll", { redirect: "follow" });
+      } else {
+        res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(body),
+          redirect: "follow"
+        });
+      }
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setStatus("ok");
+      return json;
+    } catch(e) {
+      console.warn(`API attempt ${attempt} of ${retries} failed:`, e.message);
+      if (attempt === retries) {
+        setStatus("error", "Error — check console");
+        console.error("API error (all retries exhausted):", e);
+        toast(`Error after ${retries} attempts: ${e.message}`);
+        return null;
+      }
+      // Wait before retrying — longer each time
+      await new Promise(r => setTimeout(r, attempt * 1500));
     }
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
-    setStatus("ok");
-    return json;
-  } catch(e) {
-    setStatus("error", "Error — check console");
-    console.error("API error:", e);
-    toast("Error: " + e.message);
-    return null;
   }
 }
 
