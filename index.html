@@ -363,15 +363,24 @@
           <div class="form-group" id="fg-flat" style="display:none;"><label>Listed budget ($)</label>
             <input type="number" id="f-bflat" min="0" placeholder="e.g. 500" oninput="calcPos()">
           </div>
-          <div class="form-group" id="fg-blo" style="display:none;"><label>Range low ($)</label>
-            <input type="number" id="f-blo" min="0" placeholder="e.g. 400" oninput="calcPos()">
+          <div class="form-group" id="fg-blo" style="display:none;"><label>Budget range</label>
+            <select id="f-brange" onchange="applyBudgetRange()">
+              <option value="">Select range…</option>
+              <option value="5,99">$5 – $99</option>
+              <option value="100,249">$100 – $249</option>
+              <option value="250,499">$250 – $499</option>
+              <option value="500,749">$500 – $749</option>
+              <option value="750,999">$750 – $999</option>
+              <option value="1000,1249">$1,000 – $1,249</option>
+              <option value="1250,1499">$1,250 – $1,499</option>
+              <option value="1500,1749">$1,500 – $1,749</option>
+              <option value="1750,1999">$1,750 – $1,999</option>
+              <option value="2000,2499">$2,000 – $2,499</option>
+              <option value="2500,4999">$2,500 – $4,999</option>
+              <option value="5000,9999">$5,000 – $9,999</option>
+              <option value="10000,10000">$10,000+</option>
+            </select>
           </div>
-        </div>
-        <div class="form-row" id="row-bhi" style="display:none;margin-bottom:10px;">
-          <div class="form-group"><label>Range high ($)</label>
-            <input type="number" id="f-bhi" min="0" placeholder="e.g. 700" oninput="calcPos()">
-          </div>
-          <div></div>
         </div>
         <div class="form-row" id="row-bid" style="display:none;">
           <div class="form-group"><label>Your bid ($)</label>
@@ -628,11 +637,20 @@ function setWin(d, el) {
 }
 
 // ── Budget form ───────────────────────────────────────────────
-function onBtypeChange() {
+
+ function applyBudgetRange() {
+  const val = document.getElementById("f-brange").value;
+  if (!val) return;
+  const [lo, hi] = val.split(",");
+  document.getElementById("f-blo").value = lo;
+  document.getElementById("f-bhi").value = hi;
+  calcPos();
+}
+ 
+ function onBtypeChange() {
   const t = document.getElementById("f-btype").value;
   document.getElementById("fg-flat").style.display  = t==="flat"  ? "" : "none";
   document.getElementById("fg-blo").style.display   = t==="range" ? "" : "none";
-  document.getElementById("row-bhi").style.display  = t==="range" ? "" : "none";
   document.getElementById("row-bid").style.display  = t!=="none"  ? "" : "none";
   calcPos();
 }
@@ -719,7 +737,7 @@ function resetFormHeader() {
 
 function clearForm() {
   ["f-title","f-notes","f-bflat","f-blo","f-bhi","f-bid"].forEach(id=>document.getElementById(id).value="");
-  ["f-type","f-usage","f-listened","f-short","f-booked"].forEach(id=>document.getElementById(id).selectedIndex=0);
+  ["f-type","f-usage","f-listened","f-short","f-booked","f-brange"].forEach(id=>document.getElementById(id).selectedIndex=0);
   document.getElementById("f-platform").value="Voices.com";
   document.getElementById("f-btype").value="none";
   onBtypeChange(); setToday();
@@ -740,9 +758,15 @@ function editEntry(id) {
   document.getElementById("f-btype").value    = d.btype||"none";
   onBtypeChange();
   if (d.bflat) document.getElementById("f-bflat").value=d.bflat;
-  if (d.blo)   document.getElementById("f-blo").value=d.blo;
-  if (d.bhi)   document.getElementById("f-bhi").value=d.bhi;
-  if (d.bid)   document.getElementById("f-bid").value=d.bid;
+  if (d.blo) document.getElementById("f-blo").value = d.blo;
+  if (d.bhi) document.getElementById("f-bhi").value = d.bhi;
+  if (d.blo && d.bhi) {
+    const rangeVal = `${d.blo},${d.bhi}`;
+    const opt = document.querySelector(`#f-brange option[value="${rangeVal}"]`);
+    if (opt) document.getElementById("f-brange").value = rangeVal;
+    else document.getElementById("f-brange").value = "";
+  }
+  if (d.bid) document.getElementById("f-bid").value=d.bid;
   calcPos();
   document.getElementById("form-title").textContent="Edit audition";
   document.getElementById("save-btn").textContent="Update audition";
