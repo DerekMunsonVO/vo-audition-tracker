@@ -85,7 +85,7 @@
   .tab-badge { background: var(--amber-bg); color: var(--amber-text); font-size: 11px; padding: 1px 7px; border-radius: 20px; margin-left: 4px; font-weight: 500; display: none; }
 
   .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 16px; }
-  .card-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 14px; }
+  .card-title { font-size: 18px; font-weight: 700; color: var(--text2); margin-bottom: 14px; }
 
   .metric-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
   .metric { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
@@ -175,7 +175,7 @@
   <div class="app-header">
     <div>
       <h1>Derek's VO Audition Tracker</h1>
-      <div class="subtitle">Voices.com · CastVoices · Direct</div>
+      <div class="subtitle">Voices.com · Voice123 · CastVoices · Direct</div>
     </div>
     <div class="status-wrap">
       <span id="status-dot"></span>
@@ -869,26 +869,32 @@ function renderDashboard() {
 }
 
 function renderCurrentShortlists(fd) {
-  const shortlisted=fd.filter(d=>d.shortlisted==="yes"&&d.booked==="pending");
-  const el=document.getElementById("shortlist-summary");
+  const shortlisted = fd.filter(d => d.shortlisted === "yes" && d.booked === "pending");
+  const el = document.getElementById("shortlist-summary");
   const countEl = document.getElementById("shortlist-count");
-  if (!shortlisted.length) { el.innerHTML='<div class="empty">No active shortlists right now</div>'; return; }
-  const total=shortlisted.reduce((sum,d)=>sum+Number(d.bid||0),0);
+  if (countEl) countEl.textContent = shortlisted.length ? `(${shortlisted.length})` : "";
+  if (!shortlisted.length) {
+    el.innerHTML = '<div class="empty">No active shortlists right now</div>';
+    return;
+  }
+  const total = shortlisted.reduce((sum, d) => sum + Number(d.bid || 0), 0);
   /* const bookedFromShortlist = D.filter(d => d.shortlisted === "yes" && d.booked === "yes").length;
   const totalHistoricalShortlists = D.filter(d => d.shortlisted === "yes" && d.booked !== "pending").length;
-  const closeRate=totalHistoricalShortlists?Math.round((bookedFromShortlist/totalHistoricalShortlists)*100):0;
-  const expectedValue=Math.round(total*(closeRate/100)); */
-  const jobRows=shortlisted.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
-      <div>
-        <div style="font-weight:500;">${d.title}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${d.type} · ${fmtDate(d.date)}</div>
-      </div>
-      <div style="font-weight:500;color:var(--green);white-space:nowrap;margin-left:12px;">
-        ${d.bid?"$"+Number(d.bid).toLocaleString():"—"}
-      </div>
-    </div>`).join("");
-  el.innerHTML=`
+  const closeRate = totalHistoricalShortlists ? Math.round((bookedFromShortlist / totalHistoricalShortlists) * 100) : 0;
+  const expectedValue = Math.round(total * (closeRate / 100)); */
+  const jobRows = shortlisted
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map(d => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <div>
+          <div style="font-weight:500;">${d.title}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">${d.type} · ${fmtDate(d.date)}</div>
+        </div>
+        <div style="font-weight:500;color:var(--green);white-space:nowrap;margin-left:12px;">
+          ${d.bid ? "$" + Number(d.bid).toLocaleString() : "—"}
+        </div>
+      </div>`).join("");
+  el.innerHTML = `
     <div style="margin-bottom:14px;">${jobRows}</div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
       <div>
