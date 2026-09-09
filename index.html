@@ -826,13 +826,14 @@ function renderDashboard() {
         <div style="font-size:12px;color:var(--text3);">(1:${cancelled > 0 ? Math.round(tot/cancelled) : "—"})</div>
       </div>
       <div class="metric-sub">${cancelled} cancelled</div>
+    </div>
     <div class="metric">
       <div class="metric-label">Shortlist → Booking</div>
-        <div style="display:flex;align-items:baseline;gap:8px;">
-          <div class="metric-value">${pct(slBooked,slResolved)}%</div>
-          <div style="font-size:12px;color:var(--text3);">(1:${slBooked > 0 ? Math.round(slResolved/slBooked) : "—"})</div>
-        </div>
-        <div class="metric-sub">${slBooked} booked of ${slResolved} resolved</div>
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <div class="metric-value">${pct(slBooked,slResolved)}%</div>
+        <div style="font-size:12px;color:var(--text3);">(1:${slBooked > 0 ? Math.round(slResolved/slBooked) : "—"})</div>
+      </div>
+      <div class="metric-sub">${slBooked} booked of ${slResolved} resolved</div>
     </div>`;
   renderCurrentShortlists(D);
   groupBars("b-type",  fd,"type","shortlisted","#378ADD");
