@@ -644,6 +644,24 @@ function setWin(d, el) {
   const [lo, hi] = val.split(",");
   document.getElementById("f-blo").value = lo;
   document.getElementById("f-bhi").value = hi;
+  // Default bid amounts per range — adjust these to match your usual bids
+  const defaultBids = {
+    "5,99":        75,
+    "100,249":     225,
+    "250,499":     475,
+    "500,749":     725,
+    "750,999":     975,
+    "1000,1249":   1225,
+    "1250,1499":   1475,
+    "1500,1749":   1725,
+    "1750,1999":   1975,
+    "2000,2499":   2375,
+    "2500,4999":   4950,
+    "5000,9999":   9950,
+    "10000,10000": 10000
+  };
+  const defaultBid = defaultBids[val];
+  if (defaultBid) document.getElementById("f-bid").value = defaultBid;
   calcPos();
 }
  
