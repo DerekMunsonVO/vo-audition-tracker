@@ -87,7 +87,7 @@
   .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 16px; }
   .card-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 14px; }
 
-  .metric-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 16px; }
+  .metric-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
   .metric { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
   .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
   .metric-value { font-size: 22px; font-weight: 500; }
@@ -215,6 +215,21 @@
       <button class="time-btn" onclick="setWin(180,this)">6 months</button>
       <button class="time-btn" onclick="setWin(365,this)">1 year</button>
       <button class="time-btn" onclick="setWin(99999,this)">All time</button>
+    </div>
+    <div class="time-filter" id="date-range-filter" style="align-items:center;">
+      <label style="font-size:12px;color:var(--text2);margin-right:4px;">From</label>
+      <input type="date" id="range-start" onchange="setDateRange()" style="
+        font-family:var(--font);font-size:12px;padding:3px 8px;
+        border:0.5px solid var(--border2);border-radius:var(--radius);
+        background:var(--bg);color:var(--text);
+      ">
+      <label style="font-size:12px;color:var(--text2);margin:0 4px;">to</label>
+      <input type="date" id="range-end" onchange="setDateRange()" style="
+        font-family:var(--font);font-size:12px;padding:3px 8px;
+        border:0.5px solid var(--border2);border-radius:var(--radius);
+        background:var(--bg);color:var(--text);
+      ">
+      <button class="time-btn" id="range-clear-btn" onclick="clearDateRange()" style="display:none;">✕ Clear range</button>
     </div>
     <div class="metric-grid" id="metrics"></div>
     <div class="card" id="shortlist-card">
@@ -444,7 +459,7 @@
 // ── Config ───────────────────────────────────────────────────
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZnP8JGd9czMoyY43_x9wl_8REX5qpS5asW7em2w1uSBmajpOsxO2afabJgpuRTIVh/exec";
 const APP_PASSWORD = "MunsonVO2026";
-let D = [], W = 7, TC = null, EID = null, HIRED_YEAR = "all";
+let D = [], W = 7, TC = null, EID = null, HIRED_YEAR = "all", DATE_RANGE_START = null, DATE_RANGE_END = null;
 
 // ── Auth ─────────────────────────────────────────────────────
 function checkAuth() {
@@ -738,8 +753,14 @@ function setToday() { document.getElementById("f-date").value=new Date().toISOSt
 
 // ── Render ────────────────────────────────────────────────────
 function filtered() {
-  const c=new Date(); c.setDate(c.getDate()-W);
-  return D.filter(d=>new Date(d.date)>=c);
+  if (DATE_RANGE_START && DATE_RANGE_END) {
+    return D.filter(d => {
+      const date = new Date(d.date + "T12:00:00");
+      return date >= DATE_RANGE_START && date <= DATE_RANGE_END;
+    });
+  }
+  const c = new Date(); c.setDate(c.getDate() - W);
+  return D.filter(d => new Date(d.date + "T12:00:00") >= c);
 }
 function pct(n,d) { return d===0?0:Math.round((n/d)*100); }
 
@@ -767,6 +788,8 @@ function renderDashboard() {
   const cancelled = fd.filter(d => d.booked === "cancelled").length;
   const sl=fd.filter(d=>d.shortlisted==="yes").length;
   const bk=fd.filter(d=>d.booked==="yes").length;
+  const slBooked = fd.filter(d => d.shortlisted === "yes" && d.booked === "yes").length;
+  const slResolved = fd.filter(d => d.shortlisted === "yes" && d.booked !== "pending").length;
   document.getElementById("metrics").innerHTML=`
     <div class="metric">
       <div class="metric-label">Auditions</div>
@@ -803,6 +826,14 @@ function renderDashboard() {
         <div style="font-size:12px;color:var(--text3);">(1:${cancelled > 0 ? Math.round(tot/cancelled) : "—"})</div>
       </div>
       <div class="metric-sub">${cancelled} cancelled</div>
+      <div class="metric">
+        <div class="metric-label">Shortlist → Booking</div>
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <div class="metric-value">${pct(slBooked,slResolved)}%</div>
+          <div style="font-size:12px;color:var(--text3);">(1:${slBooked > 0 ? Math.round(slResolved/slBooked) : "—"})</div>
+        </div>
+      <div class="metric-sub">${slBooked} booked of ${slResolved} resolved</div>
+      </div>
     </div>`;
   renderCurrentShortlists(D);
   groupBars("b-type",  fd,"type","shortlisted","#378ADD");
@@ -910,6 +941,32 @@ function renderTypeCount(fd) {
       <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block;"></span>Shortlisted</span>
       <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block;"></span>Not shortlisted</span>
     </div>`);
+}
+
+function setDateRange() {
+  const start = document.getElementById("range-start").value;
+  const end   = document.getElementById("range-end").value;
+  if (start && end) {
+    DATE_RANGE_START = new Date(start + "T00:00:00");
+    DATE_RANGE_END   = new Date(end   + "T23:59:59");
+    document.getElementById("range-clear-btn").style.display = "inline";
+    // Deactivate the time window buttons visually
+    document.querySelectorAll(".time-btn").forEach(b => b.classList.remove("active"));
+    renderDashboard();
+  }
+}
+
+function clearDateRange() {
+  DATE_RANGE_START = null;
+  DATE_RANGE_END   = null;
+  document.getElementById("range-start").value = "";
+  document.getElementById("range-end").value   = "";
+  document.getElementById("range-clear-btn").style.display = "none";
+  // Restore the active class to the current time window button
+  document.querySelectorAll(".time-btn").forEach(b => {
+    if (parseInt(b.getAttribute("onclick").match(/\d+/)?.[0]) === W) b.classList.add("active");
+  });
+  renderDashboard();
 }
 
 // ── Hired Jobs ────────────────────────────────────────────────
