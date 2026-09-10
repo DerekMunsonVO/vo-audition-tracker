@@ -390,6 +390,8 @@
             <div id="pos-display" style="font-size:13px;color:var(--text3);padding:9px 0;">Enter amounts above</div>
           </div>
         </div>
+        <input type="hidden" id="f-blo">
+        <input type="hidden" id="f-bhi">
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <button class="btn btn-primary" id="save-btn" onclick="saveAudition()">Save audition</button>
@@ -644,24 +646,29 @@ function setWin(d, el) {
   const [lo, hi] = val.split(",");
   document.getElementById("f-blo").value = lo;
   document.getElementById("f-bhi").value = hi;
-  // Default bid amounts per range — adjust these to match your usual bids
+
   const defaultBids = {
-    "5,99":        75,
-    "100,249":     225,
+    "5,99":        50,
+    "100,249":     200,
     "250,499":     475,
-    "500,749":     725,
-    "750,999":     975,
-    "1000,1249":   1225,
-    "1250,1499":   1475,
-    "1500,1749":   1725,
-    "1750,1999":   1975,
-    "2000,2499":   2375,
-    "2500,4999":   4950,
-    "5000,9999":   9950,
+    "500,749":     750,
+    "750,999":     999,
+    "1000,1249":   1249,
+    "1250,1499":   1499,
+    "1500,1749":   1749,
+    "1750,1999":   1999,
+    "2000,2499":   2499,
+    "2500,4999":   4999,
+    "5000,9999":   9999,
     "10000,10000": 10000
   };
+
   const defaultBid = defaultBids[val];
-  if (defaultBid) document.getElementById("f-bid").value = defaultBid;
+  if (defaultBid) {
+    document.getElementById("f-bid").value = defaultBid;
+    document.getElementById("row-bid").style.display = "";
+  }
+
   calcPos();
 }
  
