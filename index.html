@@ -723,7 +723,7 @@ function budgetDisplay(d) {
 }
 
 // ── Save / edit ───────────────────────────────────────────────
-function saveAudition() {
+async function saveAudition() {
   const entry = {
     id: EID||"", date: document.getElementById("f-date").value,
     title: document.getElementById("f-title").value||"Untitled",
@@ -741,11 +741,16 @@ function saveAudition() {
     bid:   document.getElementById("f-bid").value,
   };
   if (!entry.date) { toast("Please enter a date."); return; }
-  if (EID) { updateEntry(entry); EID=null; resetFormHeader(); }
-  else     { addEntry(entry); }
+  if (EID) {
+    await updateEntry(entry);
+    EID = null;
+    resetFormHeader();
+  } else {
+    await addEntry(entry);
+  }
   clearForm();
 }
-
+ 
 function cancelEdit() { EID=null; resetFormHeader(); clearForm(); }
 
 function resetFormHeader() {
@@ -1170,8 +1175,8 @@ function renderHistory() {
       <td><span class="badge ${sBadge(d.shortlisted,"s")}">${d.shortlisted}</span></td>
       <td><span class="badge ${sBadge(d.booked,"b")}">${d.booked}</span></td>
       <td><div style="display:flex;gap:4px;">
-        <button class="btn btn-sm" onclick="editEntry('${d.id}')" title="Edit">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteEntry('${d.id}')" title="Delete">🗑</button>
+        <button class="btn btn-sm" onclick="editEntry(this.dataset.id)" data-id="${d.id}" title="Edit">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteEntry(this.dataset.id)" data-id="${d.id}" title="Delete">🗑</button>
       </div></td>
     </tr>`;}).join("");
 }
@@ -1188,7 +1193,7 @@ function renderPending() {
           <div class="pend-title">${d.title}</div>
           <div class="pend-sub">${d.type} · ${fmtDate(d.date)} · ${d.platform||"Voices.com"}</div>
         </div>
-        <button class="btn btn-sm" onclick="editEntry('${d.id}')">✏️ Edit</button>
+        <button class="btn btn-sm" onclick="editEntry(this.dataset.id)" data-id="${d.id}">✏️ Edit</button>
       </div>
       <div class="pend-row">
         <div>
@@ -1196,8 +1201,8 @@ function renderPending() {
           <div class="quick-btns">
             <span class="badge ${sBadge(d.shortlisted,"s")}">${d.shortlisted}</span>
             ${d.shortlisted==="pending"?`
-              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','shortlisted','yes')" style="color:#0F6E56;border-color:#1D9E75;">✓ Yes</button>
-              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','shortlisted','no')"  style="color:#A32D2D;border-color:#E24B4A;">✗ No</button>`:""}
+              <button class="btn btn-sm" onclick="quickUpdate(this.dataset.id,'shortlisted','yes')" data-id="${d.id}" style="color:#0F6E56;border-color:#1D9E75;">✓ Yes</button>
+              <button class="btn btn-sm" onclick="quickUpdate(this.dataset.id,'shortlisted','no')" data-id="${d.id}"  style="color:#A32D2D;border-color:#E24B4A;">✗ No</button>`:""}
           </div>
         </div>
         <div>
@@ -1205,8 +1210,8 @@ function renderPending() {
           <div class="quick-btns">
             <span class="badge ${sBadge(d.booked,"b")}">${d.booked}</span>
             ${d.booked==="pending"?`
-              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','booked','yes')" style="color:#0F6E56;border-color:#1D9E75;">✓ Yes</button>
-              <button class="btn btn-sm" onclick="quickUpdate('${d.id}','booked','no')"  style="color:#A32D2D;border-color:#E24B4A;">✗ No</button>`:""}
+              <button class="btn btn-sm" onclick="quickUpdate(this.dataset.id,'booked','yes')" data-id="${d.id}" style="color:#0F6E56;border-color:#1D9E75;">✓ Yes</button>
+              <button class="btn btn-sm" onclick="quickUpdate(this.dataset.id,'booked','no')" data-id="${d.id}"  style="color:#A32D2D;border-color:#E24B4A;">✗ No</button>`:""}
           </div>
         </div>
       </div>
