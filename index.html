@@ -156,6 +156,10 @@
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--bg2); }
 
+  tr.row-booked td { background: var(--green-bg); }
+  tr.row-booked td:first-child { box-shadow: inset 3px 0 0 var(--green); }
+  tr.row-booked:hover td { background: #d4eed6; }
+
   .pend-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 12px; }
   .pend-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
   .pend-sub   { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
@@ -1172,7 +1176,7 @@ function renderHistory() {
   if(!rows.length){tb.innerHTML='<tr><td colspan="9" class="empty">No entries found</td></tr>';return;}
   tb.innerHTML=rows.map(d=>{
     const pos=bidPos(d);
-    return`<tr style="${d.booked==='no'||d.booked==='cancelled'?'opacity:0.4;':''}">
+    return`<tr class="${d.booked==='yes'?'row-booked':''}" style="${d.booked==='no'||d.booked==='cancelled'?'opacity:0.4;':''}">
       <td>${fmtDate(d.date)}</td>
       <td title="${d.title}">${d.title}</td>
       <td>${d.type}</td>
